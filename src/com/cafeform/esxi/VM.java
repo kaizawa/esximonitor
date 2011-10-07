@@ -1,5 +1,7 @@
 package com.cafeform.esxi;
 
+import java.util.logging.Logger;
+
 /**
  * This class represents Gest Machines stored on ESXi repository.
  *         
@@ -81,14 +83,14 @@ uptimeSeconds = <unset>,
 overallStatus = "green",                 
  */
 
-class VM {
-
+public class VM {
     private int vmid;
     private String name;
     private String vmPathName;
     private String guestFullName;
     private String powerState;
     private boolean poweron;
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * @return the vmid

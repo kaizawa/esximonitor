@@ -2,15 +2,15 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.cafeform.esxi;
+package com.cafeform.esxi.esximonitor;
 
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.Session;
 import ch.ethz.ssh2.StreamGobbler;
-import com.sun.codemodel.internal.fmt.JTextFile;
-import java.awt.BorderLayout;
+import com.cafeform.esxi.ESXiConnection;
+import com.cafeform.esxi.ESXiConnectionFactory;
+import com.cafeform.esxi.VM;
 import java.awt.Color;
-import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
@@ -19,17 +19,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-import javax.swing.BoxLayout;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.GroupLayout.ParallelGroup;
 import javax.swing.GroupLayout.SequentialGroup;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -43,11 +39,11 @@ import javax.swing.border.LineBorder;
  */
 public class ESXiMonitor extends JFrame {
 
-    public static Logger logger = Logger.getLogger("ESXiMonitor");
+    public static Logger logger = Logger.getLogger(ESXiMonitor.class.getName());
     private static ESXiConnection connection;
-    private static String hostname = "192.168.1.20";
+    private static String hostname = "stslab04";
     private static String username = "root";
-    private static String password = "sslab97";
+    private static String password = "handl3bar";
     private JScrollPane mainScrollPane = new JScrollPane();
     private static ESXiMonitor instance = new ESXiMonitor();
 
@@ -84,8 +80,9 @@ public class ESXiMonitor extends JFrame {
             @Override
             public void run() {
                 final JPanel vmListPanel = new JPanel();
-      //        vmListPanel.setBorder(new LineBorder(Color.GRAY , 2));
+                vmListPanel.setBorder(new LineBorder(Color.BLACK , 2));
                 GroupLayout layout = new GroupLayout(vmListPanel);
+                OperationButtonPanel dummyPanel = null;
 
                 vmListPanel.setLayout(layout);
                 layout.setAutoCreateGaps(true);
@@ -108,9 +105,9 @@ public class ESXiMonitor extends JFrame {
 
                 /* Add parallel group for each column (group of same parameter) */
                 hGroup.addGroup(paraGroupForPower);
+                hGroup.addGroup(paraGroupForButton);                
                 hGroup.addGroup(paraGroupForName);
                 hGroup.addGroup(paraGroupForGuestOS);
-                hGroup.addGroup(paraGroupForButton);
 
 
                 try {
@@ -125,10 +122,10 @@ public class ESXiMonitor extends JFrame {
                         JLabel powerLabel = new JLabel();
                         if (vm.isPoweron()) {
                             powerLabel.setToolTipText("Powered ON");
-                            powerLabel.setIcon(getSizedImageIcon("com/cafeform/esxi/lightbulb.png"));
+                            powerLabel.setIcon(getSizedImageIcon("com/cafeform/esxi/esximonitor/lightbulb.png"));
                         } else {
                             powerLabel.setToolTipText("Powered OFF");
-                            powerLabel.setIcon(getSizedImageIcon("com/cafeform/esxi/lightbulb_off.png"));
+                            powerLabel.setIcon(getSizedImageIcon("com/cafeform/esxi/esximonitor/lightbulb_off.png"));
                         }
                         JLabel nameLabel = new JLabel(vm.getName());
                         JLabel guestOSLabel = new JLabel(vm.getGuestFullName());
@@ -136,16 +133,16 @@ public class ESXiMonitor extends JFrame {
 
                         /* Add components to group for each column */
                         paraGroupForPower.addComponent(powerLabel);
+                        paraGroupForButton.addComponent(buttonPanel);                        
                         paraGroupForName.addComponent(nameLabel);
                         paraGroupForGuestOS.addComponent(guestOSLabel);
-                        paraGroupForButton.addComponent(buttonPanel);
-
 
                         /* Add components to group for each row */
                         paraGroupForOneVM.addComponent(powerLabel).addComponent(nameLabel).addComponent(guestOSLabel).addComponent(buttonPanel);
 
                         /* Add parallel group for each row (VM parameters) */
                         vGroup.addGroup(paraGroupForOneVM);
+                        dummyPanel = buttonPanel;
                     }
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -158,54 +155,36 @@ public class ESXiMonitor extends JFrame {
                         mainScrollPane.getViewport().setView(vmListPanel);
                         pack();
                         setVisible(true);
+                        logger.fine("vm list updated");
                     }
                 });
-
             }
         });
     }
 
     public void doTest(String[] args) {
-
-
         try {
             /* Create a connection instance */
-
             Connection conn = new Connection(hostname);
-
             /* Now connect */
-
             conn.connect();
-
             /* Authenticate.
              * If you get an IOException saying something like
              * "Authentication method password not supported by the server at this stage."
              * then please check the FAQ.
              */
-
             boolean isAuthenticated = conn.authenticateWithPassword(username, password);
-
             if (isAuthenticated == false) {
                 throw new IOException("Authentication failed.");
             }
-
             /* Create a session */
-
             Session sess = conn.openSession();
-
             sess.execCommand("vim-cmd vmsvc/getallvms");
-
-            System.out.println("Here is some information about the remote host:");
-
-            /* 
-             * This basic example does not handle stderr, which is sometimes dangerous
+            /* This basic example does not handle stderr, which is sometimes dangerous
              * (please read the FAQ).
              */
-
             InputStream stdout = new StreamGobbler(sess.getStdout());
-
             BufferedReader br = new BufferedReader(new InputStreamReader(stdout));
-
             while (true) {
                 String line = br.readLine();
                 if (line == null) {
@@ -213,19 +192,12 @@ public class ESXiMonitor extends JFrame {
                 }
                 System.out.println(line);
             }
-
             /* Show exit status, if available (otherwise "null") */
-
             System.out.println("ExitCode: " + sess.getExitStatus());
-
             /* Close this session */
-
             sess.close();
-
             /* Close the connection */
-
             conn.close();
-
         } catch (IOException e) {
             e.printStackTrace(System.err);
             System.exit(2);

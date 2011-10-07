@@ -3,16 +3,17 @@ package com.cafeform.esxi;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 /**
  * Factory class of ESXiConnection
  * 
  */
 public class ESXiConnectionFactory {
+    Logger logger = Logger.getLogger(getClass().getName());    
+    private static Map<String, ESXiConnection> serverMap = new ConcurrentHashMap<String, ESXiConnection>();    
     
     private ESXiConnectionFactory(){}
-    
-    private static Map<String, ESXiConnection> serverMap = new ConcurrentHashMap<String, ESXiConnection>();
 
     /**
      * Return ESXiConnection instance for each server.

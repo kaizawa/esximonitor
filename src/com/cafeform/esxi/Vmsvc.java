@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-import javax.print.attribute.HashAttributeSet;
-import javax.swing.JOptionPane;
 
 /**
  * <p>This class represents vimsvc options of vim-cmd</p>
@@ -22,8 +20,7 @@ import javax.swing.JOptionPane;
  * each machines.(e.g. power-on/off, reset)
  * 
  */
-class Vmsvc {
-
+public class Vmsvc {
     private ESXiConnection conn;
     Logger logger = Logger.getLogger(getClass().getName());
 
@@ -42,11 +39,12 @@ class Vmsvc {
     public List<VM> getAllvms() throws IOException {
         List<VM> vms = new ArrayList<VM>();
         Session sess = conn.getSession();
+        String cmd = "vim-cmd vmsvc/getallvms";
 
-        sess.execCommand("vim-cmd vmsvc/getallvms");
+        logger.finer("cmd: " + cmd);        
+        sess.execCommand(cmd);
 
         InputStream stdout = new StreamGobbler(sess.getStdout());
-
         BufferedReader br = new BufferedReader(new InputStreamReader(stdout));
 
         while (true) {
@@ -76,7 +74,7 @@ class Vmsvc {
                     /* just ignore this line */
                     continue;
                 }
-                VM vm = getVM(vmid);
+                VM vm = getSummary(vmid);
                 vms.add(vm);
             }
         }
@@ -92,9 +90,12 @@ class Vmsvc {
      * @return
      * @throws IOException 
      */
-    public VM getVM(int vmid) throws IOException {
+    public VM getSummary(int vmid) throws IOException {
         Session sess = conn.getSession();
-        sess.execCommand("vim-cmd vmsvc/get.summary " + vmid);
+        String cmd = "vim-cmd vmsvc/get.summary " + vmid;
+
+        logger.finer("cmd: " + cmd);
+        sess.execCommand(cmd);
         VM vm = new VM(); /* new VM instance */
 
         vm.setVmid(vmid);
@@ -115,7 +116,7 @@ class Vmsvc {
             String param = pair[0].replace(",", "").replace("\"", "").trim();
             String val = pair[1].replace(",", "").replace("\"", "").trim();
 
-            logger.finer("param=" + param + ", val=" + val);
+            logger.finest("param=" + param + ", val=" + val);
 
             if (param.equals("name")) {
                 vm.setName(val);
@@ -173,18 +174,22 @@ class Vmsvc {
         
     private void doPowerCommand(String command, int vmid) throws IOException {        
         Session sess = conn.getSession();
+        String cmd = "vim-cmd vmsvc/power." + command + " " + vmid;
 
-        sess.execCommand("vim-cmd vmsvc/power." + command + " " + vmid);
-        InputStream stdout = new StreamGobbler(sess.getStdout());
-        BufferedReader br = new BufferedReader(new InputStreamReader(stdout));
+        logger.finer("cmd: " + cmd);
+        sess.execCommand(cmd);
+
+        /* Get STDERR to check error messges */
+        InputStream stderr = new StreamGobbler(sess.getStderr());
+        BufferedReader br = new BufferedReader(new InputStreamReader(stderr));
 
         Map<String, String> map = getMapFromBfferedReader(br);
 
         String msg;
         if((msg = map.get("msg")) != null){
-            /* Some messsage recived from server */
+            /* Some error messsage recived from server */
             sess.close();
-            throw new RecieveMessageException(msg);
+            throw new RecieveErrorMessageException(msg);
         }
         /* Close this session */
         sess.close();
@@ -199,7 +204,7 @@ class Vmsvc {
             if (line == null) {
                 break;
             }
-            
+            logger.finer(line);
             String pair[] = line.split("=");
             if (pair.length < 2) {
                 /* Seems not be a line we want to read */

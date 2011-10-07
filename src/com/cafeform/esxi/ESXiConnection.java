@@ -21,7 +21,9 @@ public class ESXiConnection extends Connection {
     private String username = "";
     private String password = "";
     private boolean connected = false;
-    Logger logger = Logger.getLogger(getClass().getName());
+//    Logger logger = Logger.getLogger(getClass().getName());
+    public Logger logger = Logger.getLogger(getClass().getName());
+    
     private Vmsvc vmsvc = null;
 
 
