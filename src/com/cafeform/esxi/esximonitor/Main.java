@@ -54,10 +54,26 @@ public class Main extends JFrame implements ActionListener {
     public static Logger logger = Logger.getLogger(Main.class.getName());
 //    private static ESXiConnection connection;
     private static ServiceInstance serviceInstance = null;
+    private JLabel hostnameLabel = new JLabel();
+
+    /**
+     * @param aServiceInstance the serviceInstance to set
+     */
+    public static void setServiceInstance(ServiceInstance aServiceInstance) {
+        serviceInstance = aServiceInstance;
+    }
+
+    /**
+     * @param aRootFolder the rootFolder to set
+     */
+    public static void setRootFolder(Folder aRootFolder) {
+        rootFolder = aRootFolder;
+    }
     private String hostname;
     private String username;
     private String password;
     private static Folder rootFolder = null;
+
 
     /**
      * @return the hostname
@@ -71,6 +87,7 @@ public class Main extends JFrame implements ActionListener {
      */
     public void setHostname(String aHostname) {
         hostname = aHostname;
+        hostnameLabel.setText(hostname);
     }
 
     /**
@@ -106,7 +123,8 @@ public class Main extends JFrame implements ActionListener {
      * @return the serviceInstance
      */
     public  ServiceInstance getServiceInstance() throws RemoteException, MalformedURLException {
-        serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
+        if(serviceInstance == null)
+            serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
         return serviceInstance;
     }
 
@@ -114,8 +132,8 @@ public class Main extends JFrame implements ActionListener {
      * @return the rootFolder
      */
     public  Folder getRootFolder() throws RemoteException, MalformedURLException {
-        rootFolder = getServiceInstance().getRootFolder();
-
+        if(rootFolder == null)
+            rootFolder = getServiceInstance().getRootFolder();
         return rootFolder;
     }
 
@@ -169,11 +187,11 @@ public class Main extends JFrame implements ActionListener {
     private JComponent getButtonPanel(){
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));        
-        JLabel serverNameLabel = new JLabel(hostname);
+
         JButton button = new JButton("Update");
         button.addActionListener(this);
 
-        buttonPanel.add(serverNameLabel);        
+        buttonPanel.add(hostnameLabel);        
         buttonPanel.add(button);
         
         buttonPanel.setAlignmentX(LEFT_ALIGNMENT);         
@@ -235,7 +253,7 @@ public class Main extends JFrame implements ActionListener {
                     logger.finer("RootFolder: " + getRootFolder().getName());
                     InventoryNavigator in = new InventoryNavigator(getRootFolder());
                     //VirtualMachine[] vms = (VirtualMachine[]) in.searchManagedEntities("VirtualMachine");
-                    ManagedEntity[] mes = new InventoryNavigator(rootFolder).searchManagedEntities("VirtualMachine");
+                    ManagedEntity[] mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
                     logger.finer("total " + mes.length + " VMs found ");
 
                     for (ManagedEntity me : mes) {
@@ -308,5 +326,12 @@ public class Main extends JFrame implements ActionListener {
             updateVMLIstPanel();
         }
         repaint();
+    }
+
+    /**
+     * @param hostnameLabel the hostnameLabel to set
+     */
+    public void setHostnameLabel(JLabel hostnameLabel) {
+        this.hostnameLabel = hostnameLabel;
     }
 }

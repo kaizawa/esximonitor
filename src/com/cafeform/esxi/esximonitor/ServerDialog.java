@@ -80,6 +80,14 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
         this.pack();
     }
 
+    protected void setDefaultServer(String hostname) {
+        /* Change default server to this new server */
+        rootPref.put("defaultServer", hostname);            
+        /* clear service instance and root folder, so that new service instance will becreated */
+        esximon.setServiceInstance(null);
+        esximon.setRootFolder(null);
+    }
+
     private void updateServerList() {
         List<Server> serverList = Prefs.getServers();
         JPanel serverListPanel = new JPanel();
@@ -143,7 +151,7 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
             esximon.setHostname(hostnameTextField.getText());
             esximon.setUsername(usernameTextField.getText());
             esximon.setPassword(new String(passwordTextField.getPassword()));
-            rootPref.put("defaultServer", hostnameTextField.getText());            
+            setDefaultServer(hostnameTextField.getText());
             
             hostnameTextField.setText("");
             passwordTextField.setText("");         
@@ -179,7 +187,7 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
         logger.finer(serverName + " changed");
         if (cb.isSelected()) {
             logger.finer(serverName + " is selected.");
-            rootPref.put("defaultServer", serverName);
+            setDefaultServer(serverName);
         }
     }
     
