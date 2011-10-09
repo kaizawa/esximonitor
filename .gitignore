@@ -1,9 +1,9 @@
 build.xml
 build
-dist
 ganymed-ssh2-build251beta1
 manifest.mf
 uploads
 nbproject/private/
 src/LICENSE.txt
 upload.sh
+dist/javadoc
