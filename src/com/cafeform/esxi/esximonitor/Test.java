@@ -5,14 +5,13 @@ import com.vmware.vim25.*;
 import com.vmware.vim25.mo.*;
 
 /**
- *
- * @author ka78231
+ * Test Program
  */
 public class Test {
 
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
-        ServiceInstance si = new ServiceInstance(new URL("https://192.168.1.20/sdk"), "root", "sslab97", true);
+        ServiceInstance si = new ServiceInstance(new URL("https://192.168.1.20/sdk"), "root", "password", true);
         long end = System.currentTimeMillis();
         System.out.println("time taken:" + (end - start));
         Folder rootFolder = si.getRootFolder();

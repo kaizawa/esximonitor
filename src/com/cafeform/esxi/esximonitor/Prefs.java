@@ -8,8 +8,8 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 /**
- *
- * @author ka78231
+ * Class handle Preferences used by this app.
+ * 
  */
 public class Prefs {
 
@@ -17,6 +17,10 @@ public class Prefs {
     static Preferences rootPrefs;
     static Preferences serversPrefs;
 
+    /**
+     * Return List of ESXi host info stored in preferences.
+     * 
+     */
     static List<Server> getServers() {
         List<Server> serverList = new ArrayList<Server>();
         try {
@@ -36,6 +40,10 @@ public class Prefs {
         return serverList;
     }
 
+    /**
+     * Return top of preference node for this app.
+     * @return 
+     */
     static public Preferences getRootPreferences() {
         if (rootPrefs == null) {
             rootPrefs = Preferences.userNodeForPackage(Main.class);
@@ -49,7 +57,13 @@ public class Prefs {
         }
         return serversPrefs;
     }
-    
+
+    /**
+     * Store new ESXi host info to preferences
+     * @param hostname
+     * @param username
+     * @param password 
+     */
     static public void putServer(String hostname, String username, String password)
     {
         logger.finer("hostname=" + hostname + ", username=" + username);
@@ -60,6 +74,10 @@ public class Prefs {
         
     }
     
+    /**
+     * Remove ESXi host information from preferences
+     * @param hostname 
+     */
     static public void popServer(String hostname)
     {
         logger.finer("hostname=" + hostname);                        

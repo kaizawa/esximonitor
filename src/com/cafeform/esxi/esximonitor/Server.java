@@ -1,8 +1,7 @@
 package com.cafeform.esxi.esximonitor;
 
 /**
- *
- * @author ka78231
+ * Instance of this class represents ESXi host.
  */
 public class Server {
     private String hostname;

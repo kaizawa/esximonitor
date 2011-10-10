@@ -1,23 +1,17 @@
 package com.cafeform.esxi.esximonitor;
 
 import java.awt.Color;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
-import java.util.Locale;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
@@ -30,8 +24,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 /**
- *
- * @author ka78231
+ * Dialog which show ESXi Server list.<br>
+ * And it also allows to add new ESXi host.
+ * 
  */
 public class ServerDialog extends JDialog implements ActionListener, ChangeListener {
 
@@ -80,6 +75,11 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
         this.pack();
     }
 
+    /**
+     * Specify default ESXi host to be shown in main window.
+     * 
+     * @param hostname 
+     */
     protected void setDefaultServer(String hostname) {
         /* Change default server to this new server */
         rootPref.put("defaultServer", hostname);            
@@ -88,6 +88,9 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
         esximon.setRootFolder(null);
     }
 
+    /**
+     * Update ESXi host list shown in this Dialog window
+     */
     private void updateServerList() {
         List<Server> serverList = Prefs.getServers();
         JPanel serverListPanel = new JPanel();
@@ -181,6 +184,7 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
         });
     }
 
+    @Override
     public void stateChanged(ChangeEvent e) {
         JRadioButton cb = (JRadioButton) e.getSource();
         String serverName = cb.getText();        

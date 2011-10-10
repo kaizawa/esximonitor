@@ -5,21 +5,16 @@ import com.vmware.vim25.mo.Folder;
 import com.vmware.vim25.mo.InventoryNavigator;
 import com.vmware.vim25.mo.ManagedEntity;
 import com.vmware.vim25.mo.ServiceInstance;
-import com.vmware.vim25.mo.VirtualApp;
 import com.vmware.vim25.mo.VirtualMachine;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Event;
 import java.awt.Image;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -39,105 +34,25 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 
 /**
- *
- * @author ka78231
+ * ESXiMonitor <br>
+ * Simple Monitor of remote ESXi host. It enables to monitor power status
+ * of each virtual macnine running o ESXi host.
+ * 
  */
 public class Main extends JFrame implements ActionListener {
 
     public static Logger logger = Logger.getLogger(Main.class.getName());
-//    private static ESXiConnection connection;
     private static ServiceInstance serviceInstance = null;
     private JLabel hostnameLabel = new JLabel();
-
-    /**
-     * @param aServiceInstance the serviceInstance to set
-     */
-    public static void setServiceInstance(ServiceInstance aServiceInstance) {
-        serviceInstance = aServiceInstance;
-    }
-
-    /**
-     * @param aRootFolder the rootFolder to set
-     */
-    public static void setRootFolder(Folder aRootFolder) {
-        rootFolder = aRootFolder;
-    }
-    private String hostname;
-    private String username;
-    private String password;
-    private static Folder rootFolder = null;
-
-
-    /**
-     * @return the hostname
-     */
-    public String getHostname() {
-        return hostname;
-    }
-
-    /**
-     * @param aHostname the hostname to set
-     */
-    public void setHostname(String aHostname) {
-        hostname = aHostname;
-        hostnameLabel.setText(hostname);
-    }
-
-    /**
-     * @return the username
-     */
-    public String getUsername() {
-        return username;
-    }
-
-    /**
-     * @param aUsername the username to set
-     */
-    public void setUsername(String aUsername) {
-        username = aUsername;
-    }
-
-    /**
-     * @return the password
-     */
-    public String getPassword() {
-        return password;
-    }
-
-    /**
-     * @param aPassword the password to set
-     */
-    public void setPassword(String aPassword) {
-        password = aPassword;
-    }
-    private JScrollPane mainScrollPane = new JScrollPane();
-
-    /**
-     * @return the serviceInstance
-     */
-    public  ServiceInstance getServiceInstance() throws RemoteException, MalformedURLException {
-        if(serviceInstance == null)
-            serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
-        return serviceInstance;
-    }
-
-    /**
-     * @return the rootFolder
-     */
-    public  Folder getRootFolder() throws RemoteException, MalformedURLException {
-        if(rootFolder == null)
-            rootFolder = getServiceInstance().getRootFolder();
-        return rootFolder;
-    }
-
-    private Main() {
+    final private static int iconSize = 15;
+    
+        private Main() {
     }
 
     public static void main(String args[]) {
@@ -267,10 +182,10 @@ public class Main extends JFrame implements ActionListener {
                         JLabel powerLabel = new JLabel();
                         if (vm.getSummary().getRuntime().getPowerState().equals(VirtualMachinePowerState.poweredOn)) {
                             powerLabel.setToolTipText("Powered ON");
-                            powerLabel.setIcon(getSizedImageIcon("com/cafeform/esxi/esximonitor/lightbulb.png"));
+                            powerLabel.setIcon(getScaledImageIcon("com/cafeform/esxi/esximonitor/lightbulb.png"));
                         } else {
                             powerLabel.setToolTipText("Powered OFF");
-                            powerLabel.setIcon(getSizedImageIcon("com/cafeform/esxi/esximonitor/lightbulb_off.png"));
+                            powerLabel.setIcon(getScaledImageIcon("com/cafeform/esxi/esximonitor/lightbulb_off.png"));
                         }
                         JLabel nameLabel = new JLabel(vm.getName());
                         JLabel guestOSLabel = new JLabel(vm.getConfig().getGuestFullName());
@@ -308,13 +223,103 @@ public class Main extends JFrame implements ActionListener {
         });
     }
 
-    public static ImageIcon getSizedImageIcon(String path) throws IOException {
+    /**
+     * @param aServiceInstance the serviceInstance to set
+     */
+    public static void setServiceInstance(ServiceInstance aServiceInstance) {
+        serviceInstance = aServiceInstance;
+    }
+
+    /**
+     * @param aRootFolder the rootFolder to set
+     */
+    public static void setRootFolder(Folder aRootFolder) {
+        rootFolder = aRootFolder;
+    }
+    private String hostname;
+    private String username;
+    private String password;
+    private static Folder rootFolder = null;
+
+
+    /**
+     * @return the hostname
+     */
+    public String getHostname() {
+        return hostname;
+    }
+
+    /**
+     * @param aHostname the hostname to set
+     */
+    public void setHostname(String aHostname) {
+        hostname = aHostname;
+        hostnameLabel.setText(hostname);
+    }
+
+    /**
+     * @return the username
+     */
+    public String getUsername() {
+        return username;
+    }
+
+    /**
+     * @param aUsername the username to set
+     */
+    public void setUsername(String aUsername) {
+        username = aUsername;
+    }
+
+    /**
+     * @return the password
+     */
+    public String getPassword() {
+        return password;
+    }
+
+    /**
+     * @param aPassword the password to set
+     */
+    public void setPassword(String aPassword) {
+        password = aPassword;
+    }
+    private JScrollPane mainScrollPane = new JScrollPane();
+
+    /**
+     * @return the serviceInstance
+     */
+    public  ServiceInstance getServiceInstance() throws RemoteException, MalformedURLException {
+        if(serviceInstance == null)
+            serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
+        return serviceInstance;
+    }
+
+    /**
+     * @return the rootFolder
+     */
+    public  Folder getRootFolder() throws RemoteException, MalformedURLException {
+        if(rootFolder == null)
+            rootFolder = getServiceInstance().getRootFolder();
+        return rootFolder;
+    }
+
+    /**
+     * Load image file from given path, and return scaled icon image specified by
+     * iconSize field.
+     * 
+     * @param path
+     * @return
+     * @throws IOException 
+     */
+    public static ImageIcon getScaledImageIcon(String path) throws IOException {
         /* load icons  */
         BufferedImage originalImage = ImageIO.read(Main.class.getClassLoader().getResource(path));
-        Image smallImage = originalImage.getScaledInstance(15, 15, java.awt.Image.SCALE_SMOOTH);
+        Image smallImage = originalImage.getScaledInstance(iconSize, iconSize, java.awt.Image.SCALE_SMOOTH);
         ImageIcon icon = new javax.swing.ImageIcon(smallImage);
         return icon;
     }
+    
     @Override
     public void actionPerformed(ActionEvent ae) {
         String cmd = ae.getActionCommand();

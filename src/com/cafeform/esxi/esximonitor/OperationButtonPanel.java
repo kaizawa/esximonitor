@@ -43,7 +43,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         this.setBackground(Color.white);
 
         /* Power off */
-        JButton powerOffButton = new JButton(Main.getSizedImageIcon("com/cafeform/esxi/esximonitor/control_stop_blue.png"));
+        JButton powerOffButton = new JButton(Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_stop_blue.png"));
         powerOffButton.setBackground(Color.white);
         powerOffButton.setToolTipText("Power OFF");
         powerOffButton.setActionCommand("poweroff");
@@ -53,7 +53,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         }
 
         /* Power On */
-        JButton powerOnButton = new JButton(Main.getSizedImageIcon("com/cafeform/esxi/esximonitor/control_play_blue.png"));
+        JButton powerOnButton = new JButton(Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_play_blue.png"));
         powerOffButton.setBackground(Color.white);
         powerOnButton.setToolTipText("Power ON");
         powerOnButton.setActionCommand("poweron");
@@ -63,7 +63,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         }
 
         /* Power reset */
-        JButton resetButton = new JButton(Main.getSizedImageIcon("com/cafeform/esxi/esximonitor/control_pause_blue.png"));
+        JButton resetButton = new JButton(Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_pause_blue.png"));
         resetButton.setBackground(Color.white);        
         resetButton.setToolTipText("Reset");
         resetButton.setActionCommand("reset");
@@ -73,7 +73,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         }
 
         /* Shutdown Guest OS */
-        JButton shutdownButton = new JButton(Main.getSizedImageIcon("com/cafeform/esxi/esximonitor/exclamation.png"));
+        JButton shutdownButton = new JButton(Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/exclamation.png"));
         shutdownButton.setBackground(Color.white);        
         shutdownButton.setToolTipText("Shutdown Guest OS");
         shutdownButton.setActionCommand("shutdown");
