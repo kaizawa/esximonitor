@@ -17,6 +17,7 @@ import java.rmi.RemoteException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -27,14 +28,31 @@ import javax.swing.JPanel;
  */
 public class OperationButtonPanel extends JPanel implements ActionListener {
 
-    public Logger logger = Logger.getLogger(getClass().getName());
+    static public Logger logger = Logger.getLogger(OperationButtonPanel.class.getName());
     private Main esximon;
 
     private OperationButtonPanel() {
     }
     private VirtualMachine vm;
+    
+    static Icon control_stop_blue = null;
+    static Icon control_play_blue = null;
+    static Icon control_pause_blue = null;
+    static Icon exclamation = null;    
 
-    public OperationButtonPanel(Main esximon, VirtualMachine vm) throws IOException {
+    /* Load Icons */
+    static {
+        try {
+            control_stop_blue = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_stop_blue.png");            
+            control_play_blue = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_play_blue.png");            
+            control_pause_blue = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_pause_blue.png");
+            exclamation = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/exclamation.png");
+        } catch (IOException ex ){
+            logger.severe("Cannot load icon image");
+        }        
+    }
+
+    public OperationButtonPanel(Main esximon, VirtualMachine vm) {
         this.vm = vm;
         this.esximon = esximon;
         boolean poweredOn = vm.getSummary().getRuntime().getPowerState().equals(VirtualMachinePowerState.poweredOn);
@@ -43,7 +61,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         this.setBackground(Color.white);
 
         /* Power off */
-        JButton powerOffButton = new JButton(Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_stop_blue.png"));
+        JButton powerOffButton = new JButton(control_stop_blue);
         powerOffButton.setBackground(Color.white);
         powerOffButton.setToolTipText("Power OFF");
         powerOffButton.setActionCommand("poweroff");
@@ -53,7 +71,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         }
 
         /* Power On */
-        JButton powerOnButton = new JButton(Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_play_blue.png"));
+        JButton powerOnButton = new JButton(control_play_blue);
         powerOffButton.setBackground(Color.white);
         powerOnButton.setToolTipText("Power ON");
         powerOnButton.setActionCommand("poweron");
@@ -63,7 +81,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         }
 
         /* Power reset */
-        JButton resetButton = new JButton(Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_pause_blue.png"));
+        JButton resetButton = new JButton(control_pause_blue);
         resetButton.setBackground(Color.white);        
         resetButton.setToolTipText("Reset");
         resetButton.setActionCommand("reset");
@@ -73,7 +91,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         }
 
         /* Shutdown Guest OS */
-        JButton shutdownButton = new JButton(Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/exclamation.png"));
+        JButton shutdownButton = new JButton(exclamation);
         shutdownButton.setBackground(Color.white);        
         shutdownButton.setToolTipText("Shutdown Guest OS");
         shutdownButton.setActionCommand("shutdown");

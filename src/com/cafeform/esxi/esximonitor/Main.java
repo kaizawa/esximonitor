@@ -29,6 +29,7 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.GroupLayout.ParallelGroup;
 import javax.swing.GroupLayout.SequentialGroup;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -50,8 +51,20 @@ public class Main extends JFrame implements ActionListener {
     private static ServiceInstance serviceInstance = null;
     private JLabel hostnameLabel = new JLabel();
     final private static int iconSize = 15;
+    static Icon lightbulb = null;
+    static Icon lightbulb_off = null;
 
     private Main() {
+    }
+    
+    /* Load Icons */
+    static {
+        try {
+            lightbulb = getScaledImageIcon("com/cafeform/esxi/esximonitor/lightbulb.png");
+            lightbulb_off = getScaledImageIcon("com/cafeform/esxi/esximonitor/lightbulb_off.png");
+        } catch (Exception ex) {
+            logger.severe("cannot load icon image");
+        }
     }
 
     public static void main(String args[]) {
@@ -136,6 +149,7 @@ public class Main extends JFrame implements ActionListener {
                 vmListPanel.setBackground(Color.white);
                 GroupLayout layout = new GroupLayout(vmListPanel);
 
+
                 vmListPanel.setLayout(layout);
                 layout.setAutoCreateGaps(true);
 
@@ -161,49 +175,54 @@ public class Main extends JFrame implements ActionListener {
                 hGroup.addGroup(paraGroupForName);
                 hGroup.addGroup(paraGroupForGuestOS);
 
+                ManagedEntity[] mes = null;
                 try {
                     logger.finer("RootFolder: " + getRootFolder().getName());
                     InventoryNavigator in = new InventoryNavigator(getRootFolder());
-                    //VirtualMachine[] vms = (VirtualMachine[]) in.searchManagedEntities("VirtualMachine");
-                    ManagedEntity[] mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
-                    logger.finer("total " + mes.length + " VMs found ");
-
-                    for (ManagedEntity me : mes) {
-                        VirtualMachine vm = (VirtualMachine) me;
-                        logger.finer("found VM: " + vm.getName() + " " + vm.getSummary().getRuntime().getPowerState());
-                        /* Create parallec group for each vms */
-                        ParallelGroup paraGroupForOneVM = layout.createParallelGroup(Alignment.BASELINE);
-                        /* 
-                         * Create Labels corresponding to VM info fields 
-                         */
-                        JLabel powerLabel = new JLabel();
-                        if (vm.getSummary().getRuntime().getPowerState().equals(VirtualMachinePowerState.poweredOn)) {
-                            powerLabel.setToolTipText("Powered ON");
-                            powerLabel.setIcon(getScaledImageIcon("com/cafeform/esxi/esximonitor/lightbulb.png"));
-                        } else {
-                            powerLabel.setToolTipText("Powered OFF");
-                            powerLabel.setIcon(getScaledImageIcon("com/cafeform/esxi/esximonitor/lightbulb_off.png"));
-                        }
-                        JLabel nameLabel = new JLabel(vm.getName());
-                        JLabel guestOSLabel = new JLabel(vm.getConfig().getGuestFullName());
-                        OperationButtonPanel buttonPanel = new OperationButtonPanel(esximon, vm);
-
-                        /* Add components to group for each column */
-                        paraGroupForPower.addComponent(powerLabel);
-                        paraGroupForButton.addComponent(buttonPanel);
-                        paraGroupForName.addComponent(nameLabel);
-                        paraGroupForGuestOS.addComponent(guestOSLabel);
-
-                        /* Add components to group for each row */
-                        paraGroupForOneVM.addComponent(powerLabel).addComponent(nameLabel).addComponent(guestOSLabel).addComponent(buttonPanel);
-
-                        /* Add parallel group for each row (VM parameters) */
-                        vGroup.addGroup(paraGroupForOneVM);
+                    mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
+                    if (mes == null) {
+                        logger.fine("no vm exist");
+                        return;
                     }
+                    logger.finer("total " + mes.length + " VMs found ");
                 } catch (IOException ex) {
                     ex.printStackTrace();
                     logger.severe("Can't get vm list");
                 }
+
+                for (ManagedEntity me : mes) {
+                    VirtualMachine vm = (VirtualMachine) me;
+                    logger.finer("found VM: " + vm.getName() + " " + vm.getSummary().getRuntime().getPowerState());
+                    /* Create parallec group for each vms */
+                    ParallelGroup paraGroupForOneVM = layout.createParallelGroup(Alignment.BASELINE);
+                    /* 
+                     * Create Labels corresponding to VM info fields 
+                     */
+                    JLabel powerLabel = new JLabel();
+                    if (vm.getSummary().getRuntime().getPowerState().equals(VirtualMachinePowerState.poweredOn)) {
+                        powerLabel.setToolTipText("Powered ON");
+                        powerLabel.setIcon(lightbulb);
+                    } else {
+                        powerLabel.setToolTipText("Powered OFF");
+                        powerLabel.setIcon(lightbulb_off);
+                    }
+                    JLabel nameLabel = new JLabel(vm.getName());
+                    JLabel guestOSLabel = new JLabel(vm.getConfig().getGuestFullName());
+                    OperationButtonPanel buttonPanel = new OperationButtonPanel(esximon, vm);
+
+                    /* Add components to group for each column */
+                    paraGroupForPower.addComponent(powerLabel);
+                    paraGroupForButton.addComponent(buttonPanel);
+                    paraGroupForName.addComponent(nameLabel);
+                    paraGroupForGuestOS.addComponent(guestOSLabel);
+
+                    /* Add components to group for each row */
+                    paraGroupForOneVM.addComponent(powerLabel).addComponent(nameLabel).addComponent(guestOSLabel).addComponent(buttonPanel);
+
+                    /* Add parallel group for each row (VM parameters) */
+                    vGroup.addGroup(paraGroupForOneVM);
+                }
+
 
                 logger.finer("creating new vmListePanel completed");
                 SwingUtilities.invokeLater(new Runnable() {
