@@ -7,8 +7,11 @@ import com.vmware.vim25.mo.ManagedEntity;
 import com.vmware.vim25.mo.ServiceInstance;
 import com.vmware.vim25.mo.VirtualMachine;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.event.ActionEvent;
@@ -37,6 +40,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 
 /**
@@ -51,8 +55,8 @@ public class Main extends JFrame implements ActionListener {
     private static ServiceInstance serviceInstance = null;
     private JLabel hostnameLabel = new JLabel();
     final private static int iconSize = 15;
-    
-        private Main() {
+
+    private Main() {
     }
 
     public static void main(String args[]) {
@@ -75,44 +79,43 @@ public class Main extends JFrame implements ActionListener {
         List<Server> servers = Prefs.getServers();
         Preferences rooPref = Prefs.getRootPreferences();
         String defaultServer = rooPref.get("defaultServer", "");
-        if(servers.size() == 0){
+        if (servers.isEmpty()) {
             new ServerDialog(this).setVisible(true);
         }
-        for(Server server : servers){
-            if(server.getHostname().equals(defaultServer)){
+        for (Server server : servers) {
+            if (server.getHostname().equals(defaultServer)) {
                 setHostname(server.getHostname());
                 setUsername(server.getUsername());
                 setPassword(server.getPassword());
             }
         }
-        
+
         setTitle("ESXiMonitor");
         addMenuBar();
-        
+
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.add(getButtonPanel());
+        mainPanel.add(getDefaultServerPanel());
         mainPanel.add(mainScrollPane);
 
         this.getContentPane().add(mainPanel);
         updateVMLIstPanel();
         this.setVisible(true);
     }
-    
-    private JComponent getButtonPanel(){
+
+    private JComponent getDefaultServerPanel() {
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));        
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
 
         JButton button = new JButton("Update");
         button.addActionListener(this);
 
-        buttonPanel.add(hostnameLabel);        
+        buttonPanel.add(hostnameLabel);
         buttonPanel.add(button);
-        
-        buttonPanel.setAlignmentX(LEFT_ALIGNMENT);         
-       
-       return buttonPanel;
-        
+
+        buttonPanel.setAlignmentX(LEFT_ALIGNMENT);
+
+        return buttonPanel;
     }
 
     private void addMenuBar() {
@@ -135,7 +138,6 @@ public class Main extends JFrame implements ActionListener {
             public void run() {
                 logger.finer("retrieving VMs task is running");
                 final JPanel vmListPanel = new JPanel();
-                vmListPanel.setBorder(new LineBorder(Color.BLACK, 2));
                 vmListPanel.setBackground(Color.white);
                 GroupLayout layout = new GroupLayout(vmListPanel);
 
@@ -241,7 +243,6 @@ public class Main extends JFrame implements ActionListener {
     private String password;
     private static Folder rootFolder = null;
 
-
     /**
      * @return the hostname
      */
@@ -289,18 +290,20 @@ public class Main extends JFrame implements ActionListener {
     /**
      * @return the serviceInstance
      */
-    public  ServiceInstance getServiceInstance() throws RemoteException, MalformedURLException {
-        if(serviceInstance == null)
+    public ServiceInstance getServiceInstance() throws RemoteException, MalformedURLException {
+        if (serviceInstance == null) {
             serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
+        }
         return serviceInstance;
     }
 
     /**
      * @return the rootFolder
      */
-    public  Folder getRootFolder() throws RemoteException, MalformedURLException {
-        if(rootFolder == null)
+    public Folder getRootFolder() throws RemoteException, MalformedURLException {
+        if (rootFolder == null) {
             rootFolder = getServiceInstance().getRootFolder();
+        }
         return rootFolder;
     }
 
@@ -319,7 +322,7 @@ public class Main extends JFrame implements ActionListener {
         ImageIcon icon = new javax.swing.ImageIcon(smallImage);
         return icon;
     }
-    
+
     @Override
     public void actionPerformed(ActionEvent ae) {
         String cmd = ae.getActionCommand();
@@ -327,7 +330,7 @@ public class Main extends JFrame implements ActionListener {
         if ("Servers".equals(cmd)) {
             ServerDialog dialog = new ServerDialog(this);
             dialog.setVisible(true);
-        } else if("Update".equals(cmd)){
+        } else if ("Update".equals(cmd)) {
             updateVMLIstPanel();
         }
         repaint();
