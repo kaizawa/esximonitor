@@ -7,11 +7,8 @@ import com.vmware.vim25.mo.ManagedEntity;
 import com.vmware.vim25.mo.ServiceInstance;
 import com.vmware.vim25.mo.VirtualMachine;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Image;
-import java.awt.Insets;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.event.ActionEvent;
@@ -40,8 +37,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
-import javax.swing.border.Border;
-import javax.swing.border.LineBorder;
 
 /**
  * ESXiMonitor <br>
