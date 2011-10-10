@@ -7,6 +7,7 @@ import com.vmware.vim25.mo.ManagedEntity;
 import com.vmware.vim25.mo.ServiceInstance;
 import com.vmware.vim25.mo.VirtualMachine;
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Menu;
@@ -16,11 +17,14 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.imageio.ImageIO;
@@ -33,11 +37,16 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 
 /**
  * ESXiMonitor <br>
@@ -45,8 +54,9 @@ import javax.swing.SwingUtilities;
  * of each virtual macnine running o ESXi host.
  * 
  */
-public class Main extends JFrame implements ActionListener {
+public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
+    static String version = "v0.1.5";
     public static Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
     private JLabel hostnameLabel = new JLabel();
@@ -56,7 +66,7 @@ public class Main extends JFrame implements ActionListener {
 
     private Main() {
     }
-    
+
     /* Load Icons */
     static {
         try {
@@ -131,7 +141,13 @@ public class Main extends JFrame implements ActionListener {
         Menu editMenu = new Menu("Edit");
         editMenu.add("Servers");
         editMenu.addActionListener(this);
+        
+        Menu helpMenu = new Menu("Help");
+        helpMenu.add("About ESXiMonitor");
+        helpMenu.addActionListener(this);        
+        
         menuBar.add(editMenu);
+        menuBar.add(helpMenu);
         this.setMenuBar(menuBar);
     }
 
@@ -148,7 +164,6 @@ public class Main extends JFrame implements ActionListener {
                 final JPanel vmListPanel = new JPanel();
                 vmListPanel.setBackground(Color.white);
                 GroupLayout layout = new GroupLayout(vmListPanel);
-
 
                 vmListPanel.setLayout(layout);
                 layout.setAutoCreateGaps(true);
@@ -176,18 +191,31 @@ public class Main extends JFrame implements ActionListener {
                 hGroup.addGroup(paraGroupForGuestOS);
 
                 ManagedEntity[] mes = null;
-                try {
-                    logger.finer("RootFolder: " + getRootFolder().getName());
-                    InventoryNavigator in = new InventoryNavigator(getRootFolder());
-                    mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
-                    if (mes == null) {
-                        logger.fine("no vm exist");
-                        return;
+
+                while (true) {
+                    int retrys = 0;
+                    try {
+                        logger.finer("RootFolder: " + getRootFolder().getName());
+                        InventoryNavigator in = new InventoryNavigator(getRootFolder());
+                        mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
+                        if (mes == null) {
+                            logger.fine("no vm exist");
+                            return;
+                        }
+                        logger.finer("total " + mes.length + " VMs found ");
+                    } catch (IOException ex) {
+                        logger.fine("retrying to conect to ESXi host...");
+                        /* Clear existing service instance and root foler */
+                        setServiceInstance(null);
+                        setRootFolder(null);
+                        retrys++;
+                        if (retrys > 2) {
+                            ex.printStackTrace();
+                            logger.severe("Cannot get VM list");
+                            return;
+                        }
                     }
-                    logger.finer("total " + mes.length + " VMs found ");
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                    logger.severe("Can't get vm list");
+                    break;
                 }
 
                 for (ManagedEntity me : mes) {
@@ -344,6 +372,20 @@ public class Main extends JFrame implements ActionListener {
         if ("Servers".equals(cmd)) {
             ServerDialog dialog = new ServerDialog(this);
             dialog.setVisible(true);
+        } else if("About ESXiMonitor".equals(cmd)){
+            StringBuilder msg = new StringBuilder();                        
+            JEditorPane editorPane = new JEditorPane();
+            editorPane.setContentType("text/html");
+            editorPane.addHyperlinkListener(this);
+            editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true);
+            editorPane.setBackground(UIManager.getColor("control")); 
+            
+            msg.append("ESXiMonitor Version " + version + "<br>");
+            msg.append("<a href=https://github.com/kaizawa/esximonitor/wiki/esximinitor>"
+                    + "https://github.com/kaizawa/esximonitor/wiki/esximinitor</a><br>");
+            editorPane.setText(msg.toString());
+            JOptionPane.showMessageDialog(this, editorPane);
+            
         } else if ("Update".equals(cmd)) {
             updateVMLIstPanel();
         }
@@ -355,5 +397,19 @@ public class Main extends JFrame implements ActionListener {
      */
     public void setHostnameLabel(JLabel hostnameLabel) {
         this.hostnameLabel = hostnameLabel;
+    }
+
+    @Override
+    public void hyperlinkUpdate(HyperlinkEvent he) {
+        logger.finer(he.toString());
+        if(he.getEventType()==HyperlinkEvent.EventType.ACTIVATED) {
+            try {
+                Desktop.getDesktop().browse(new URI(he.getDescription()));
+            } catch (IOException ex) {
+                logger.severe((ex.getMessage()));
+            } catch (URISyntaxException ex) {
+                logger.severe((ex.getMessage()));                
+            }
+        }
     }
 }
