@@ -89,7 +89,8 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     }
 
     public static void printUsage() {
-        System.err.println("Usage: java -jar escimonitor <server> <user> <password>");
+        System.err.println("Usage: java -cp lib/dom4j-1.6.1.jar:lib/vijava520110926.jar:"
+                + "dist/esximonitor.jar com.cafeform.esxi.esximonitor.Main");
     }
 
     public void execute(String[] args) {

@@ -1,5 +1,8 @@
 package com.cafeform.esxi.esximonitor;
 
+import com.cafeform.esxi.ESXiConnection;
+import com.cafeform.esxi.VM;
+import com.cafeform.esxi.Vmsvc;
 import com.vmware.vim25.InvalidState;
 import com.vmware.vim25.RestrictedVersion;
 import com.vmware.vim25.RuntimeFault;
@@ -35,22 +38,21 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
     private OperationButtonPanel() {
     }
     private VirtualMachine vm;
-    
     static Icon control_stop_blue = null;
     static Icon control_play_blue = null;
     static Icon control_pause_blue = null;
-    static Icon exclamation = null;    
+    static Icon exclamation = null;
 
     /* Load Icons */
     static {
         try {
-            control_stop_blue = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_stop_blue.png");            
-            control_play_blue = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_play_blue.png");            
+            control_stop_blue = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_stop_blue.png");
+            control_play_blue = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_play_blue.png");
             control_pause_blue = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/control_pause_blue.png");
             exclamation = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/exclamation.png");
-        } catch (IOException ex ){
+        } catch (IOException ex) {
             logger.severe("Cannot load icon image");
-        }        
+        }
     }
 
     public OperationButtonPanel(Main esximon, VirtualMachine vm) {
@@ -83,7 +85,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
 
         /* Power reset */
         JButton resetButton = new JButton(control_pause_blue);
-        resetButton.setBackground(Color.white);        
+        resetButton.setBackground(Color.white);
         resetButton.setToolTipText("Reset");
         resetButton.setActionCommand("reset");
         resetButton.addActionListener(this);
@@ -93,7 +95,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
 
         /* Shutdown Guest OS */
         JButton shutdownButton = new JButton(exclamation);
-        shutdownButton.setBackground(Color.white);        
+        shutdownButton.setBackground(Color.white);
         shutdownButton.setToolTipText("Shutdown Guest OS");
         shutdownButton.setActionCommand("shutdown");
         shutdownButton.addActionListener(this);
@@ -116,6 +118,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
 
         /* try to execute command in backgroup */
         executor.submit(new Runnable() {
+
             @Override
             public void run() {
                 try {
@@ -150,38 +153,69 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                             vm.shutdownGuest();
                         }
                     }
-                    if(task != null)
+                    if (task != null) {
                         task.waitForTask();
-                } catch (InterruptedException ex){
+                    }
+                } catch (InterruptedException ex) {
                     // interrupted 
                 } catch (InvalidState ex) {
                     JOptionPane.showMessageDialog(esximon, "Invalid State\n"
                             + ex.getMessage(), "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (TaskInProgress ex) {
-                    JOptionPane.showMessageDialog(esximon, "Task Inprogress\n" 
-                            + ex.getMessage() + "\n" + ex.getTask().getVal() + 
-                            "\n" + ex.getTask().getType(), "Error", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(esximon, "Task Inprogress\n"
+                            + ex.getMessage() + "\n" + ex.getTask().getVal()
+                            + "\n" + ex.getTask().getType(), "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (ToolsUnavailable ex) {
                     JOptionPane.showMessageDialog(esximon, "Cannot complete operation "
-                            + "because VMware\n Tools is not running in this virtual machine."
-                            , "Error", JOptionPane.WARNING_MESSAGE);
+                            + "because VMware\n Tools is not running in this virtual machine.", "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (RestrictedVersion ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(esximon, "RestrictedVersion\n"
-                            , "Error", JOptionPane.WARNING_MESSAGE);                    
+                    try {
+                        /* Seems remote ESXi server doesn't accept command via VI API
+                         * try to run command via SSH
+                         */
+                        runCommandViaSsh(actionCommand);
+                    } catch (Exception ex2) {
+                        /* Fummm, command faild via SSH too... Report the result to user. */
+                        logger.severe("runCommandViaSSH recieved IOException");
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(esximon, "RestrictedVersion\n", "Error", JOptionPane.WARNING_MESSAGE);
+                    }
+
                 } catch (RuntimeFault ex) {
                     ex.printStackTrace();
-                    JOptionPane.showMessageDialog(esximon, "RuntimeFault\n"
-                            , "Error", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(esximon, "RuntimeFault\n", "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (RemoteException ex) {
-                    JOptionPane.showMessageDialog(esximon, "RemoteFault\n"
-                            , "Error", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(esximon, "RemoteFault\n", "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
                 esximon.updateVMLIstPanel();
-                logger.finer("panel update request posted");                
+                logger.finer("panel update request posted");
             }
         });
+    }
+
+    void runCommandViaSsh(String actionCommand) throws IOException {
+        logger.finer("runCommandViaSsh called");
+        ESXiConnection conn = new ESXiConnection(esximon.getHostname(), esximon.getUsername(), esximon.getPassword());
+        Vmsvc vmsvc = conn.getVmsvc();
+        int vmid = -1;
+
+        for (VM ssh_vm : vmsvc.getAllvms()) {
+            if (ssh_vm.getName().equals(vm.getName())) {
+                vmid = ssh_vm.getVmid();
+            }
+        }
+        
+        if ("poweroff".equals(actionCommand)) {
+            vmsvc.powerOff(vmid);
+        } else if ("poweron".equals(actionCommand)) {
+            vmsvc.powerOn(vmid);
+        } else if ("reset".equals(actionCommand)) {
+            vmsvc.powerReset(vmid);
+        } else if ("shutdown".equals(actionCommand)) {
+            vmsvc.powerShutdown(vmid);
+        }
+        logger.finer("Submit " + actionCommand + " via SSH succeeded");
     }
 }
