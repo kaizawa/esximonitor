@@ -1,5 +1,6 @@
 package com.cafeform.esxi.esximonitor;
 
+import com.sun.xml.internal.messaging.saaj.soap.ver1_1.Message1_1Impl;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.mo.Folder;
 import com.vmware.vim25.mo.InventoryNavigator;
@@ -69,7 +70,7 @@ import javax.swing.event.ListSelectionListener;
  */
 public class Main extends JFrame implements ActionListener, HyperlinkListener  {
 
-    static String version = "v0.1.7";
+    static String version = "v0.1.8";
     public static Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
     final private static int iconSize = 15;
@@ -213,7 +214,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
                 hGroup.addGroup(paraGroupForName);
                 hGroup.addGroup(paraGroupForGuestOS);
 
-                ManagedEntity[] mes = null;
+                ManagedEntity[] mes = new ManagedEntity[0];
 
                 boolean retried = false; /* retry once if error happen  */                
                 while (true) {
@@ -226,7 +227,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
                             setRootFolder(null);
                             if (retried) {
                                 logger.fine("no vm exist");
-                                return;
+                                break;
                             }
                             logger.fine("no vm returned. retrying...");
                             retried = true;
@@ -241,7 +242,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
                         if (retried) {
                             ex.printStackTrace();
                             logger.severe("Cannot get VM list");
-                            return;
+                            break;
                         }
                         retried = true;
                         continue;
