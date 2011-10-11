@@ -1,6 +1,7 @@
 package com.cafeform.esxi.esximonitor;
 
 import com.vmware.vim25.InvalidState;
+import com.vmware.vim25.RestrictedVersion;
 import com.vmware.vim25.RuntimeFault;
 import com.vmware.vim25.TaskInProgress;
 import com.vmware.vim25.ToolsUnavailable;
@@ -157,19 +158,24 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                     JOptionPane.showMessageDialog(esximon, "Invalid State\n"
                             + ex.getMessage(), "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (TaskInProgress ex) {
-                    JOptionPane.showMessageDialog(esximon, "Task In progress\n" 
+                    JOptionPane.showMessageDialog(esximon, "Task Inprogress\n" 
                             + ex.getMessage() + "\n" + ex.getTask().getVal() + 
                             "\n" + ex.getTask().getType(), "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (ToolsUnavailable ex) {
                     JOptionPane.showMessageDialog(esximon, "Cannot complete operation "
                             + "because VMware\n Tools is not running in this virtual machine."
                             , "Error", JOptionPane.WARNING_MESSAGE);
+                } catch (RestrictedVersion ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(esximon, "RestrictedVersion\n"
+                            , "Error", JOptionPane.WARNING_MESSAGE);                    
                 } catch (RuntimeFault ex) {
-                    JOptionPane.showMessageDialog(esximon, "Runtime Fault\n"
-                            +ex.getMessage() , "Error", JOptionPane.WARNING_MESSAGE);
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(esximon, "RuntimeFault\n"
+                            , "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (RemoteException ex) {
-                    JOptionPane.showMessageDialog(esximon, "Remote Fault\n"
-                            + ex.getMessage() , "Error", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(esximon, "RemoteFault\n"
+                            , "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
