@@ -56,7 +56,7 @@ import javax.swing.event.HyperlinkListener;
  */
 public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
-    static String version = "v0.1.5";
+    static String version = "v0.1.6";
     public static Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
     private JLabel hostnameLabel = new JLabel();
@@ -193,14 +193,21 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                 ManagedEntity[] mes = null;
 
                 while (true) {
-                    int retrys = 0;
+                    boolean retried = false; /* retry once if error happen  */
                     try {
-                        logger.finer("RootFolder: " + getRootFolder().getName());
                         InventoryNavigator in = new InventoryNavigator(getRootFolder());
+                        logger.finer("RootFolder: " + getRootFolder().getName());
                         mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
-                        if (mes == null) {
-                            logger.fine("no vm exist");
-                            return;
+                        if (mes == null || mes.length == 0) {
+                            setServiceInstance(null);
+                            setRootFolder(null);                            
+                            if (retried) {
+                                logger.fine("no vm exist");
+                                return;
+                            }
+                            logger.fine("no vm returned. retrying...");
+                            retried = true;
+                            continue;
                         }
                         logger.finer("total " + mes.length + " VMs found ");
                     } catch (IOException ex) {
@@ -208,12 +215,13 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                         /* Clear existing service instance and root foler */
                         setServiceInstance(null);
                         setRootFolder(null);
-                        retrys++;
-                        if (retrys > 2) {
+                        if (retried) {
                             ex.printStackTrace();
                             logger.severe("Cannot get VM list");
                             return;
                         }
+                        retried = true;
+                        continue;
                     }
                     break;
                 }
