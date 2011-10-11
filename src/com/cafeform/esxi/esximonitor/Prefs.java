@@ -88,4 +88,20 @@ public class Prefs {
             ex.printStackTrace();
         }
     }
+    
+    static public Server getServer(String hostname){
+        List<Server> servers = Prefs.getServers();
+        for (Server server : servers) {
+            if (server.getHostname().equals(hostname)) {
+                return server;
+            }
+        }
+        return null;
+    }
+    
+    static public Server getDefaServer(){
+        Preferences rooPref = Prefs.getRootPreferences();
+        String defaultServer = rooPref.get("defaultServer", "");        
+        return getServer(defaultServer);
+    }
 }

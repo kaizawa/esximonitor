@@ -9,6 +9,7 @@ import com.vmware.vim25.mo.VirtualMachine;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Menu;
 import java.awt.MenuBar;
@@ -29,6 +30,9 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.GroupLayout.ParallelGroup;
@@ -36,17 +40,26 @@ import javax.swing.GroupLayout.SequentialGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.ListModel;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 /**
  * ESXiMonitor <br>
@@ -54,15 +67,16 @@ import javax.swing.event.HyperlinkListener;
  * of each virtual macnine running o ESXi host.
  * 
  */
-public class Main extends JFrame implements ActionListener, HyperlinkListener {
+public class Main extends JFrame implements ActionListener, HyperlinkListener  {
 
     static String version = "v0.1.7";
     public static Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
-    private JLabel hostnameLabel = new JLabel();
     final private static int iconSize = 15;
     static Icon lightbulb = null;
     static Icon lightbulb_off = null;
+    private DefaultComboBoxModel model = new DefaultComboBoxModel();
+    private JComboBox serverComboBox = new JComboBox(model);
 
     private Main() {
     }
@@ -95,19 +109,14 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
     public void execute(String[] args) {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        List<Server> servers = Prefs.getServers();
-        Preferences rooPref = Prefs.getRootPreferences();
-        String defaultServer = rooPref.get("defaultServer", "");
-        if (servers.isEmpty()) {
+        
+        Server server = Prefs.getDefaServer();
+        if (server == null){
             new ServerDialog(this).setVisible(true);
         }
-        for (Server server : servers) {
-            if (server.getHostname().equals(defaultServer)) {
-                setHostname(server.getHostname());
-                setUsername(server.getUsername());
-                setPassword(server.getPassword());
-            }
-        }
+        setHostname(server.getHostname());
+        setUsername(server.getUsername());
+        setPassword(server.getPassword());
 
         setTitle("ESXiMonitor");
         addMenuBar();
@@ -123,18 +132,31 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     }
 
     private JComponent getDefaultServerPanel() {
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        JPanel defaultServerPanel = new JPanel();
+        defaultServerPanel.setLayout(new BoxLayout(defaultServerPanel, BoxLayout.X_AXIS));
+        serverComboBox.addActionListener(this);
+
+        List<Server> serverList = Prefs.getServers();
+        String defaultServer = Prefs.getRootPreferences().get("defaultServer", "");
+        if (serverList.size() > 0) {
+            for (Server server : Prefs.getServers()) {
+                model.addElement(server.getHostname());
+                logger.fine("added " + server.getHostname());
+                if (server.getHostname().equals(defaultServer)) {
+                    serverComboBox.setSelectedItem(server.getHostname());
+                }
+            }
+        }
 
         JButton button = new JButton("Update");
         button.addActionListener(this);
 
-        buttonPanel.add(hostnameLabel);
-        buttonPanel.add(button);
+        defaultServerPanel.add(serverComboBox);        
+        defaultServerPanel.add(button);
+        defaultServerPanel.setAlignmentX(LEFT_ALIGNMENT);
 
-        buttonPanel.setAlignmentX(LEFT_ALIGNMENT);
-
-        return buttonPanel;
+        
+        return defaultServerPanel;
     }
 
     private void addMenuBar() {
@@ -142,11 +164,11 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         Menu editMenu = new Menu("Edit");
         editMenu.add("Servers");
         editMenu.addActionListener(this);
-        
+
         Menu helpMenu = new Menu("Help");
         helpMenu.add("About ESXiMonitor");
-        helpMenu.addActionListener(this);        
-        
+        helpMenu.addActionListener(this);
+
         menuBar.add(editMenu);
         menuBar.add(helpMenu);
         this.setMenuBar(menuBar);
@@ -193,15 +215,15 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
                 ManagedEntity[] mes = null;
 
+                boolean retried = false; /* retry once if error happen  */                
                 while (true) {
-                    boolean retried = false; /* retry once if error happen  */
                     try {
                         InventoryNavigator in = new InventoryNavigator(getRootFolder());
-                        logger.finer("RootFolder: " + getRootFolder().getName());
+                        logger.fine("RootFolder: " + getRootFolder().getName());
                         mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
                         if (mes == null || mes.length == 0) {
                             setServiceInstance(null);
-                            setRootFolder(null);                            
+                            setRootFolder(null);
                             if (retried) {
                                 logger.fine("no vm exist");
                                 return;
@@ -306,7 +328,13 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      */
     public void setHostname(String aHostname) {
         hostname = aHostname;
-        hostnameLabel.setText(hostname);
+        for (int i = 0; i < getModel().getSize(); i++) {
+            String name = (String) getModel().getElementAt(i);
+            if (name.equals(aHostname)) {
+                serverComboBox.setSelectedItem(name);
+                break;
+            }
+        }
     }
 
     /**
@@ -381,44 +409,76 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         if ("Servers".equals(cmd)) {
             ServerDialog dialog = new ServerDialog(this);
             dialog.setVisible(true);
-        } else if("About ESXiMonitor".equals(cmd)){
-            StringBuilder msg = new StringBuilder();                        
+        } else if ("About ESXiMonitor".equals(cmd)) {
+            StringBuilder msg = new StringBuilder();
             JEditorPane editorPane = new JEditorPane();
             editorPane.setContentType("text/html");
             editorPane.addHyperlinkListener(this);
             editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true);
-            editorPane.setBackground(UIManager.getColor("control")); 
-            
+            editorPane.setBackground(UIManager.getColor("control"));
+
             msg.append("ESXiMonitor Version " + version + "<br>");
             msg.append("<a href=https://github.com/kaizawa/esximonitor/wiki/esximinitor>"
                     + "https://github.com/kaizawa/esximonitor/wiki/esximinitor</a><br>");
             editorPane.setText(msg.toString());
             JOptionPane.showMessageDialog(this, editorPane);
-            
+
         } else if ("Update".equals(cmd)) {
+            updateVMLIstPanel();
+        } else if ("comboBoxChanged".equals(cmd)){
+            JComboBox comboBox = (JComboBox) ae.getSource();
+            String hostname = (String)comboBox.getSelectedItem();
+            logger.fine(hostname + " is selected.");
+            setDefaultServer(hostname);
             updateVMLIstPanel();
         }
         repaint();
-    }
 
-    /**
-     * @param hostnameLabel the hostnameLabel to set
-     */
-    public void setHostnameLabel(JLabel hostnameLabel) {
-        this.hostnameLabel = hostnameLabel;
     }
 
     @Override
     public void hyperlinkUpdate(HyperlinkEvent he) {
         logger.finer(he.toString());
-        if(he.getEventType()==HyperlinkEvent.EventType.ACTIVATED) {
+        if (he.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
             try {
                 Desktop.getDesktop().browse(new URI(he.getDescription()));
             } catch (IOException ex) {
                 logger.severe((ex.getMessage()));
             } catch (URISyntaxException ex) {
-                logger.severe((ex.getMessage()));                
+                logger.severe((ex.getMessage()));
             }
         }
+    }
+
+    /**
+     * Specify default ESXi host to be shown in main window.
+     * 
+     * @param hostname 
+     */
+    protected void setDefaultServer(String hostname) {
+        setHostname(hostname);
+        /* Change default server to this new server */
+        Prefs.getRootPreferences().put("defaultServer", hostname);
+
+        /* get Server object of default server*/
+        Server server = Prefs.getDefaServer();
+        if (server == null){
+            new ServerDialog(this).setVisible(true);
+        }
+        setHostname(server.getHostname());
+        setUsername(server.getUsername());
+        setPassword(server.getPassword());
+
+        /* clear service instance and root folder, so that new service instance will becreated */        
+        setServiceInstance(null);
+        setRootFolder(null);
+    }
+
+
+    /**
+     * @return the model
+     */
+    public DefaultComboBoxModel getModel() {
+        return model;
     }
 }

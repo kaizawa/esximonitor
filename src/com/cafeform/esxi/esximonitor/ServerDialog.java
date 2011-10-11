@@ -9,15 +9,19 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ListModel;
 import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
@@ -75,18 +79,7 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
         this.pack();
     }
 
-    /**
-     * Specify default ESXi host to be shown in main window.
-     * 
-     * @param hostname 
-     */
-    protected void setDefaultServer(String hostname) {
-        /* Change default server to this new server */
-        rootPref.put("defaultServer", hostname);            
-        /* clear service instance and root folder, so that new service instance will becreated */
-        esximon.setServiceInstance(null);
-        esximon.setRootFolder(null);
-    }
+
 
     /**
      * Update ESXi host list shown in this Dialog window
@@ -147,22 +140,34 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
     public void actionPerformed(ActionEvent ae) {
         String cmd = ae.getActionCommand();
         final JDialog dialog = this;
+        String hostname = hostnameTextField.getText();
+        String username = usernameTextField.getText();
+        String password = new String(passwordTextField.getPassword());
 
         logger.finer("get " + cmd + " action command");
         if ("Add".equals(cmd)) {
-            Prefs.putServer(hostnameTextField.getText(), usernameTextField.getText(), new String(passwordTextField.getPassword()));
-            esximon.setHostname(hostnameTextField.getText());
-            esximon.setUsername(usernameTextField.getText());
-            esximon.setPassword(new String(passwordTextField.getPassword()));
-            setDefaultServer(hostnameTextField.getText());
+            Prefs.putServer(hostname, username, password);
+            esximon.setHostname(hostname);
+            esximon.setUsername(username);
+            esximon.setPassword(password);
+            esximon.setDefaultServer(hostname);
             
             hostnameTextField.setText("");
-            passwordTextField.setText("");         
-            
+            passwordTextField.setText("");    
+            esximon.getModel().addElement(hostname);
         } else if (cmd.startsWith("Delete")) {
             String pair[] = cmd.split(":", 2);
             logger.finer("get Delete action command. " + pair[0] + ", " + pair[1]);
             Prefs.popServer(pair[1]);
+
+            DefaultComboBoxModel model = esximon.getModel();
+            for(int i = 0; i < model.getSize(); i++) {
+                String name = (String) model.getElementAt(i);
+                if(name.equals(hostname)){
+                    model.removeElement(name);
+                    break;
+                }
+            }
         } else if ("OK".equals(cmd)) { 
             this.setVisible(false);
             this.dispose();
@@ -191,7 +196,7 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
         logger.finer(serverName + " changed");
         if (cb.isSelected()) {
             logger.finer(serverName + " is selected.");
-            setDefaultServer(serverName);
+            esximon.setDefaultServer(serverName);
         }
     }
     
