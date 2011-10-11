@@ -56,7 +56,7 @@ import javax.swing.event.HyperlinkListener;
  */
 public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
-    static String version = "v0.1.6";
+    static String version = "v0.1.7";
     public static Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
     private JLabel hostnameLabel = new JLabel();

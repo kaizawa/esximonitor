@@ -110,7 +110,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent ae) {
         final String actionCommand = ae.getActionCommand();
-        logger.finer(ae.getActionCommand() + " event recieved.");
+        logger.finer(ae.getActionCommand() + " event for " + vm.getName() + " recieved.");
         ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
         /* try to execute command in backgroup */
