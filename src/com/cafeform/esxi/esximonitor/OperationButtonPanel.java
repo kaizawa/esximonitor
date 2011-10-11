@@ -156,7 +156,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                     // interrupted 
                 } catch (InvalidState ex) {
                     JOptionPane.showMessageDialog(esximon, "Invalid State\n"
-                            + ex.getMessage(), "Error", JOptionPane.WARNING_MESSAGE);
+                            , "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (TaskInProgress ex) {
                     JOptionPane.showMessageDialog(esximon, "Task Inprogress\n" 
                             + ex.getMessage() + "\n" + ex.getTask().getVal() + 
@@ -174,6 +174,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                     JOptionPane.showMessageDialog(esximon, "RuntimeFault\n"
                             , "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (RemoteException ex) {
+                    ex.printStackTrace();                    
                     JOptionPane.showMessageDialog(esximon, "RemoteFault\n"
                             , "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (IOException ex) {
