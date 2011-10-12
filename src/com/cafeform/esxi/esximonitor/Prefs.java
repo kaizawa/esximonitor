@@ -100,7 +100,7 @@ public class Prefs {
     }
     
     static public Server getDefaServer(){
-        Preferences rooPref = Prefs.getRootPreferences();
+        Preferences rooPref = getRootPreferences();
         String defaultServer = rooPref.get("defaultServer", "");        
         return getServer(defaultServer);
     }
