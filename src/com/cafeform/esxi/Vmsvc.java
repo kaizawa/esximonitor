@@ -178,6 +178,10 @@ public class Vmsvc {
 
         logger.finer("cmd: " + cmd);
         sess.execCommand(cmd);
+        
+        /* TODO: should check the task status periodically and wait for completion, 
+         * so that user can check the current status timely 
+         */
 
         /* Get STDERR to check error messges */
         InputStream stderr = new StreamGobbler(sess.getStderr());
