@@ -6,3 +6,6 @@ nbproject/private/
 src/LICENSE.txt
 upload.sh
 dist/javadoc
+upload-test.sh
+upload-test
+upload
