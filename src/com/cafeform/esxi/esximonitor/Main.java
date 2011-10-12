@@ -1,6 +1,5 @@
 package com.cafeform.esxi.esximonitor;
 
-import com.sun.xml.internal.messaging.saaj.soap.ver1_1.Message1_1Impl;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.mo.Folder;
 import com.vmware.vim25.mo.InventoryNavigator;
@@ -10,7 +9,6 @@ import com.vmware.vim25.mo.VirtualMachine;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
-import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Menu;
 import java.awt.MenuBar;
@@ -28,12 +26,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.DefaultListModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.GroupLayout.ParallelGroup;
@@ -46,21 +41,13 @@ import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.ListModel;
-import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
 /**
  * ESXiMonitor <br>
@@ -68,9 +55,9 @@ import javax.swing.event.ListSelectionListener;
  * of each virtual macnine running o ESXi host.
  * 
  */
-public class Main extends JFrame implements ActionListener, HyperlinkListener  {
+public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
-    static String version = "v0.1.8";
+    static String version = "v0.1.9";
     public static Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
     final private static int iconSize = 15;
@@ -78,6 +65,11 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
     static Icon lightbulb_off = null;
     private DefaultComboBoxModel model = new DefaultComboBoxModel();
     private JComboBox serverComboBox = new JComboBox(model);
+    private String hostname;
+    private String username;
+    private String password;
+    private static Folder rootFolder = null;
+    ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     private Main() {
     }
@@ -103,18 +95,23 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
         instance.execute(args);
     }
 
-    public static void printUsage() {
+    private static void printUsage() {
         System.err.println("Usage: java -cp lib/dom4j-1.6.1.jar:lib/vijava520110926.jar:"
                 + "dist/esximonitor.jar com.cafeform.esxi.esximonitor.Main");
     }
 
-    public void execute(String[] args) {
+    private void execute(String[] args) {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
+
         Server server = Prefs.getDefaServer();
-        if (server == null){
+        if (server == null) {
+            logger.finer("server is null");
             new ServerDialog(this).setVisible(true);
+            String name = (String)model.getSelectedItem();
+            setDefaultServer(name);
+            server = Prefs.getServer(name);
         }
+        
         setHostname(server.getHostname());
         setUsername(server.getUsername());
         setPassword(server.getPassword());
@@ -135,7 +132,6 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
     private JComponent getDefaultServerPanel() {
         JPanel defaultServerPanel = new JPanel();
         defaultServerPanel.setLayout(new BoxLayout(defaultServerPanel, BoxLayout.X_AXIS));
-        serverComboBox.addActionListener(this);
 
         List<Server> serverList = Prefs.getServers();
         String defaultServer = Prefs.getRootPreferences().get("defaultServer", "");
@@ -149,14 +145,15 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
             }
         }
 
+        serverComboBox.addActionListener(this);
         JButton button = new JButton("Update");
         button.addActionListener(this);
 
-        defaultServerPanel.add(serverComboBox);        
+        defaultServerPanel.add(serverComboBox);
         defaultServerPanel.add(button);
         defaultServerPanel.setAlignmentX(LEFT_ALIGNMENT);
 
-        
+
         return defaultServerPanel;
     }
 
@@ -176,7 +173,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
     }
 
     protected void updateVMLIstPanel() {
-        ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
         logger.finer("submitting task");
         final Main esximon = this;
 
@@ -184,7 +181,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
 
             @Override
             public void run() {
-                logger.finer("retrieving VMs task is running");
+                logger.severe("update task is running");
                 final JPanel vmListPanel = new JPanel();
                 vmListPanel.setBackground(Color.white);
                 GroupLayout layout = new GroupLayout(vmListPanel);
@@ -216,7 +213,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
 
                 ManagedEntity[] mes = new ManagedEntity[0];
 
-                boolean retried = false; /* retry once if error happen  */                
+                boolean retried = false; /* retry once if error happen  */
                 while (true) {
                     try {
                         InventoryNavigator in = new InventoryNavigator(getRootFolder());
@@ -312,10 +309,6 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
     public static void setRootFolder(Folder aRootFolder) {
         rootFolder = aRootFolder;
     }
-    private String hostname;
-    private String username;
-    private String password;
-    private static Folder rootFolder = null;
 
     /**
      * @return the hostname
@@ -332,7 +325,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
         for (int i = 0; i < getModel().getSize(); i++) {
             String name = (String) getModel().getElementAt(i);
             if (name.equals(aHostname)) {
-                serverComboBox.setSelectedItem(name);
+                model.setSelectedItem(name);
                 break;
             }
         }
@@ -370,9 +363,14 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
     /**
      * @return the serviceInstance
      */
-    public ServiceInstance getServiceInstance() throws RemoteException, MalformedURLException {
+    public ServiceInstance getServiceInstance() throws MalformedURLException {
+
         if (serviceInstance == null) {
-            serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
+            try {
+                serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
+            } catch (RemoteException ex) {
+                logger.severe(getUsername() + " " + getPassword() + " " + ex.toString());
+            }
         }
         return serviceInstance;
     }
@@ -426,9 +424,9 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
 
         } else if ("Update".equals(cmd)) {
             updateVMLIstPanel();
-        } else if ("comboBoxChanged".equals(cmd)){
+        } else if ("comboBoxChanged".equals(cmd)) {
             JComboBox comboBox = (JComboBox) ae.getSource();
-            String hostname = (String)comboBox.getSelectedItem();
+            String hostname = (String) comboBox.getSelectedItem();
             logger.fine(hostname + " is selected.");
             setDefaultServer(hostname);
             updateVMLIstPanel();
@@ -453,28 +451,37 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener  {
 
     /**
      * Specify default ESXi host to be shown in main window.
+     * This method must be called from actionPerformed.
+     * (except for first load without default server setting)
      * 
      * @param hostname 
      */
-    protected void setDefaultServer(String hostname) {
+    private void setDefaultServer(String hostname) {
         setHostname(hostname);
         /* Change default server to this new server */
         Prefs.getRootPreferences().put("defaultServer", hostname);
 
         /* get Server object of default server*/
         Server server = Prefs.getDefaServer();
-        if (server == null){
+        if (server == null) {
             new ServerDialog(this).setVisible(true);
         }
         setHostname(server.getHostname());
         setUsername(server.getUsername());
         setPassword(server.getPassword());
 
-        /* clear service instance and root folder, so that new service instance will becreated */        
+        /* clear service instance and root folder, so that new service instance will becreated */
         setServiceInstance(null);
         setRootFolder(null);
-    }
 
+        for (int i = 0; i < model.getSize(); i++) {
+            String name = (String) model.getElementAt(i);
+            if (name.equals(hostname)) {
+                model.setSelectedItem(name);
+                break;
+            }
+        }
+    }
 
     /**
      * @return the model
