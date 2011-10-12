@@ -153,7 +153,7 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
             passwordTextField.setText("");    
         } else if (cmd.startsWith("Delete")) {
             String pair[] = cmd.split(":", 2);
-            logger.finer("get Delete action command. " + pair[0] + ", " + pair[1]);
+            logger.finer("get Delete action command. " + pair[1]);
             Prefs.popServer(pair[1]);
 
             DefaultComboBoxModel model = esximon.getModel();
@@ -166,6 +166,14 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
             }
         } else if ("OK".equals(cmd)) { 
             DefaultComboBoxModel model = esximon.getModel();
+            if(selectedServer == null){
+                if(Prefs.getServers().isEmpty()){
+                    this.setVisible(false);                                        
+                    this.dispose();                     
+                } else {
+                    selectedServer = Prefs.getServers().get(0);                     
+                }
+            }
             for(int i = 0; i < model.getSize(); i++) {
                 String name = (String) model.getElementAt(i);
                 if(name.equals(selectedServer.getHostname())){
@@ -176,6 +184,7 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
             this.setVisible(false);
             this.dispose();            
         }
+        
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -191,8 +200,8 @@ public class ServerDialog extends JDialog implements ActionListener, ChangeListe
         String serverName = cb.getText();        
         logger.finer(serverName + " changed");
         if (cb.isSelected()) {
-            logger.finer(serverName + " is selected.");
             selectedServer = Prefs.getServer(serverName);
+            logger.finer(selectedServer.getHostname() + " is selected.");
         }
     }
     
