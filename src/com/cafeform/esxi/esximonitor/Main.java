@@ -7,6 +7,7 @@ import com.vmware.vim25.mo.InventoryNavigator;
 import com.vmware.vim25.mo.ManagedEntity;
 import com.vmware.vim25.mo.ServiceInstance;
 import com.vmware.vim25.mo.VirtualMachine;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
@@ -25,6 +26,7 @@ import java.rmi.RemoteException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
@@ -71,7 +73,10 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private String password;
     private static Folder rootFolder = null;
     ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-    private JProgressBar progressBar = new JProgressBar();
+    private JProgressBar progressBar = null;
+    private JLabel statusLabel = new JLabel();
+    private JScrollPane mainScrollPane = new JScrollPane();
+    
 
     private Main() {
     }
@@ -93,7 +98,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         }
         logger.finer("main called");
         Main instance = new Main();
-        instance.setMinimumSize(new Dimension(300, 80));
+        instance.setMinimumSize(new Dimension(400, 80));
         instance.execute(args);
     }
 
@@ -133,7 +138,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.add(createDefaultServerPanel());
         mainPanel.add(mainScrollPane);
-        mainPanel.add(createProgressBarPanel());
+        mainPanel.add(createStatusBarPanel());
 
         this.getContentPane().add(mainPanel);
         updateVMLIstPanel();
@@ -193,6 +198,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
             @Override
             public void run() {
                 getProgressBar().setIndeterminate(true);
+                getStatusLabel().setText("Updating VM List of " + getHostname());
                 try {
                     logger.fine("update task is running");
                     final JPanel vmListPanel = new JPanel();
@@ -233,8 +239,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                             logger.fine("RootFolder: " + getRootFolder().getName());
                             mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
                             if (mes == null || mes.length == 0) {
-                                setServiceInstance(null);
-                                setRootFolder(null);
+                                resetServer();
                                 if (retried) {
                                     logger.fine("no vm exist");
                                     break;
@@ -247,20 +252,16 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                         } catch (InvalidLogin ex) {
                             logger.finer("Login to " + getHostname() + " failed ");
                             logger.severe(ex.toString());
-                            setServiceInstance(null);
-                            setRootFolder(null);
+                            resetServer();
                             break;                            
                         } catch (RemoteException ex) {
                             logger.finer("RemoteException happen when connecting to " + getHostname()); 
                             logger.severe(ex.toString());
-                            setServiceInstance(null);
-                            setRootFolder(null);
+                            resetServer();
                             break;
                         } catch (IOException ex) {
                             logger.fine("retrying to conect to ESXi host...");
-                            /* Clear existing service instance and root foler */
-                            setServiceInstance(null);
-                            setRootFolder(null);
+                            resetServer();
                             if (retried) {
                                 ex.printStackTrace();
                                 logger.severe("Cannot get VM list");
@@ -317,11 +318,27 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                         }
                     });
                 } finally {
+                    getStatusLabel().setText("");
                     getProgressBar().setIndeterminate(false);
                 }
             }
         });
     }
+    
+    /**
+     * Reset current connection with the server
+     */
+    public void resetServer() {
+        try {
+            getServiceInstance().getServerConnection().logout();
+            setServiceInstance(null);
+            setRootFolder(null);
+        } catch (MalformedURLException ex) {
+            logger.severe(ex.toString());
+        } catch (RemoteException ex) {
+            logger.severe(ex.toString());            
+        }
+    }    
 
     /**
      * @param aServiceInstance the serviceInstance to set
@@ -385,7 +402,6 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     public void setPassword(String aPassword) {
         password = aPassword;
     }
-    private JScrollPane mainScrollPane = new JScrollPane();
 
     /**
      * @return the serviceInstance
@@ -496,10 +512,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         setHostname(server.getHostname());
         setUsername(server.getUsername());
         setPassword(server.getPassword());
-
-        /* clear service instance and root folder, so that new service instance will becreated */
-        setServiceInstance(null);
-        setRootFolder(null);
+        resetServer();
 
         for (int i = 0; i < model.getSize(); i++) {
             String name = (String) model.getElementAt(i);
@@ -517,10 +530,20 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         return model;
     }
 
-    private JPanel createProgressBarPanel() {
+    private JComponent createStatusBarPanel() {
+        
         JPanel panel = new JPanel();
-        panel.add(getProgressBar());
-        panel.setAlignmentX(0.0f);
+        panel.setLayout(new BorderLayout(5,5));
+
+
+        
+        panel.add(getStatusLabel(),BorderLayout.WEST);
+        panel.add(getProgressBar(), BorderLayout.EAST);        
+        Dimension bar_dem = getProgressBar().getMaximumSize();
+        Dimension panel_dem = panel.getMaximumSize();
+        panel_dem.setSize(panel_dem.width, bar_dem.height);        
+        panel.setMaximumSize(panel_dem);
+
         return panel;
     }
 
@@ -528,6 +551,12 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      * @return the progressBar
      */
     public JProgressBar getProgressBar() {
+        if(progressBar == null){
+            progressBar = new JProgressBar();
+            Dimension dem = progressBar.getMaximumSize();
+            dem.setSize(30, dem.height);
+            progressBar.setMaximumSize(dem);
+        }
         return progressBar;
     }
 
@@ -536,5 +565,12 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      */
     public JComboBox getServerComboBox() {
         return serverComboBox;
+    }
+
+    /**
+     * @return the statusLabel
+     */
+    public JLabel getStatusLabel() {
+        return statusLabel;
     }
 }

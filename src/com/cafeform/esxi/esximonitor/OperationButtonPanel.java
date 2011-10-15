@@ -19,6 +19,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -129,9 +131,8 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
 
     private void doCommand(String command) throws HeadlessException {
         esximon.getProgressBar().setIndeterminate(true);
+        esximon.getStatusLabel().setText("Running " + command + " on " + vm.getName());
         
-                System.out.println("GuestID: " + vm.getGuest().getGuestId());
-                
         try {
             Task task = null;
             if ("poweroff".equals(command)) {
@@ -226,6 +227,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         } else if ("shutdown".equals(actionCommand)) {
             vmsvc.powerShutdown(vmid);
         }
+        logger.finer(vmsvc.powerGetState(vmid));
         logger.finer("Submit " + actionCommand + " via SSH succeeded");
     }
 }

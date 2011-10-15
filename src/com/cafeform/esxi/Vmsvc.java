@@ -21,6 +21,7 @@ import java.util.logging.Logger;
  * 
  */
 public class Vmsvc {
+
     private ESXiConnection conn;
     Logger logger = Logger.getLogger(getClass().getName());
 
@@ -40,19 +41,19 @@ public class Vmsvc {
         List<VM> vms = new ArrayList<VM>();
 
         List<Integer> vmidList = getVmIds();
-        for(Integer vmid : vmidList){
+        for (Integer vmid : vmidList) {
             VM vm = getSummary(vmid);
             vms.add(vm);
         }
         return vms;
     }
-    
+
     public List<Integer> getVmIds() throws IOException {
         Session sess = conn.getSession();
         String cmd = "vim-cmd vmsvc/getallvms";
         List<Integer> vmidList = new ArrayList<Integer>();
 
-        logger.finer("cmd: " + cmd);        
+        logger.finer("cmd: " + cmd);
         sess.execCommand(cmd);
 
         InputStream stdout = new StreamGobbler(sess.getStdout());
@@ -80,8 +81,8 @@ public class Vmsvc {
             if (tokenizer.hasMoreTokens()) {
                 try {
                     vmidList.add(Integer.parseInt(tokenizer.nextToken()));
-                    
-                } catch (NumberFormatException ex ){
+
+                } catch (NumberFormatException ex) {
                     /* just ignore this line */
                     continue;
                 }
@@ -91,7 +92,7 @@ public class Vmsvc {
         /* Close this session */
         sess.close();
         return vmidList;
-    }    
+    }
 
     /**
      * Get summary info of guest machine specified by vmid
@@ -133,14 +134,14 @@ public class Vmsvc {
                 vm.setVmPathName(val);
             } else if (param.equals("guestFullName")) {
                 vm.setGuestFullName(val);
-            } else if (param.equals("powerState")){
+            } else if (param.equals("powerState")) {
                 vm.setPowerState(val);
             }
         }
-        sess.close ();
-        return vm ;
+        sess.close();
+        return vm;
     }
-    
+
     /**
      * <p>Shutdown guest system</p>
      * @param vmid
@@ -149,8 +150,8 @@ public class Vmsvc {
      */
     public void powerShutdown(int vmid) throws IOException {
         doPowerCommand("shutdown", vmid);
-    }    
-    
+    }
+
     /**
      * <p>Reset Power of Virtual Machine</p>
      * @param vmid
@@ -160,7 +161,7 @@ public class Vmsvc {
     public void powerReset(int vmid) throws IOException {
         doPowerCommand("reset", vmid);
     }
-    
+
     /**
      * <p>Power on Virtual Machine</p>
      * @param vmid
@@ -169,8 +170,8 @@ public class Vmsvc {
      */
     public void powerOn(int vmid) throws IOException {
         doPowerCommand("on", vmid);
-    }  
-    
+    }
+
     /**
      * <p>Power off Virtual Machine</p>
      * @param vmid
@@ -179,40 +180,84 @@ public class Vmsvc {
      */
     public void powerOff(int vmid) throws IOException {
         doPowerCommand("off", vmid);
-    }          
-        
-    private void doPowerCommand(String command, int vmid) throws IOException {        
+    }
+
+    /**
+     * <p>Get Power state of Virtual Machine</p>
+     * @param vmid
+     * @return Power state
+     * @throws IOException 
+     */
+    public String powerGetState(int vmid) throws IOException {
+        return doPowerCommand("getstate", vmid);
+    }
+
+    private String doPowerCommand(String command, int vmid) throws IOException {
         Session sess = conn.getSession();
         String cmd = "vim-cmd vmsvc/power." + command + " " + vmid;
+        InputStream stdout = null, stderr = null;
+        BufferedReader obr = null, ebr = null;
+        StringBuilder output = new StringBuilder();
 
-        logger.finer("cmd: " + cmd);
-        sess.execCommand(cmd);
-        
-        /* TODO: should check the task status periodically and wait for completion, 
-         * so that user can check the current status timely 
-         */
+        try {
+            logger.finer("cmd: " + cmd);
+            sess.execCommand(cmd);
 
-        /* Get STDERR to check error messges */
-        InputStream stderr = new StreamGobbler(sess.getStderr());
-        BufferedReader br = new BufferedReader(new InputStreamReader(stderr));
+            /* TODO: should check the task status periodically and wait for completion, 
+             * so that user can check the current status timely 
+             */
 
-        Map<String, String> map = getMapFromBfferedReader(br);
+            /* Get STDOUT */
+            stdout = new StreamGobbler(sess.getStdout());
+            obr = new BufferedReader(new InputStreamReader(stdout));
+            logger.finer(obr.readLine());
 
-        String msg;
-        if((msg = map.get("msg")) != null){
-            /* Some error messsage recived from server */
-            sess.close();
-            throw new RecieveErrorMessageException(msg);
+            while (true) {
+                String line = obr.readLine();
+                if (line == null) {
+                    break;
+                }
+                output.append(line);
+            }
+
+            /* Get STDERR to check error messges */
+            stderr = new StreamGobbler(sess.getStderr());
+            ebr = new BufferedReader(new InputStreamReader(stderr));
+
+            Map<String, String> map = getMapFromBfferedReader(ebr);
+
+            String msg;
+            if ((msg = map.get("msg")) != null) {
+                /* Some error messsage recived from server */
+                sess.close();
+                throw new RecieveErrorMessageException(msg);
+            }
+
+        } finally {
+            if (obr != null) {
+                obr.close();
+            }
+            if (ebr != null) {
+                ebr.close();
+            }
+            if (stdout != null) {
+                stdout.close();
+            }
+            if (stderr != null) {
+                stderr.close();
+            }
+            /* Close this session */
+            if (sess != null) {
+                sess.close();
+            }
         }
-        /* Close this session */
-        sess.close();
-    }     
-    
-    
+        return output.toString();
+    }
+
     private Map<String, String> getMapFromBfferedReader(BufferedReader br) throws IOException {
         Map map = new ConcurrentHashMap<String, String>();
-        
-       while (true) {
+
+        while (true) {
             String line = br.readLine();
             if (line == null) {
                 break;
@@ -226,7 +271,39 @@ public class Vmsvc {
             String param = pair[0].replace(",", "").replace("\"", "").trim();
             String val = pair[1].replace(",", "").replace("\"", "").trim();
             map.put(param, val);
-        }        
+        }
         return map;
     }
- }
+
+    private void powerGetState(String command, int vmid) throws IOException {
+        Session sess = conn.getSession();
+        String cmd = "vim-cmd vmsvc/power." + command + " " + vmid;
+
+        logger.finer("cmd: " + cmd);
+        sess.execCommand(cmd);
+
+        /* TODO: should check the task status periodically and wait for completion, 
+         * so that user can check the current status timely 
+         */
+
+        /* Get STDOUT to for debugging */
+        InputStream stdout = new StreamGobbler(sess.getStdout());
+        BufferedReader obr = new BufferedReader(new InputStreamReader(stdout));
+        logger.finer(obr.readLine());
+
+        /* Get STDERR to check error messges */
+        InputStream stderr = new StreamGobbler(sess.getStderr());
+        BufferedReader ebr = new BufferedReader(new InputStreamReader(stderr));
+
+        Map<String, String> map = getMapFromBfferedReader(ebr);
+
+        String msg;
+        if ((msg = map.get("msg")) != null) {
+            /* Some error messsage recived from server */
+            sess.close();
+            throw new RecieveErrorMessageException(msg);
+        }
+        /* Close this session */
+        sess.close();
+    }
+}
