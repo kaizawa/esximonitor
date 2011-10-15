@@ -38,6 +38,16 @@ Copyright (c) 2009 NetApp. All Rights Reserved.
 VMWare VI(vSpere) Java API is licensed under BSD.
 
 ---------------------------------------------------------
+Ganymed SSH-2 for Java
+
+http://www.ganymed.ethz.ch/ssh2/
+
+The Ganymed SSH-2 for Java library is released under a BSD style license. 
+The Java implementations of the AES, Blowfish and 3DES ciphers have been 
+taken (and slightly modified) from the cryptography package released by 
+The Legion Of The Bouncy Castle.
+
+---------------------------------------------------------
 FAMFAMFAM SILK ICONS
 Written by Mark James.
 http://www.famfamfam.com/lab/icons/silk/
