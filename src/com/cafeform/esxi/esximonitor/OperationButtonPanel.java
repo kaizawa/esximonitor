@@ -14,6 +14,7 @@ import com.vmware.vim25.mo.VirtualMachine;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.GridLayout;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -121,81 +122,84 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
 
             @Override
             public void run() {
-                esximon.getProgressBar().setIndeterminate(true);
-                try {
-                    Task task = null;
-                    if ("poweroff".equals(actionCommand)) {
-                        int response = JOptionPane.showConfirmDialog(esximon,
-                                "Are you sure want to power down \"" + vm.getName() + "\" ?",
-                                "Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                        if (response == JOptionPane.NO_OPTION) {
-                            return;
-                        } else {
-                            task = vm.powerOffVM_Task();
-                        }
-                    } else if ("poweron".equals(actionCommand)) {
-                        task = vm.powerOnVM_Task(null);
-                    } else if ("reset".equals(actionCommand)) {
-                        int response = JOptionPane.showConfirmDialog(esximon,
-                                "Are you sure want to reset \"" + vm.getName() + "\" ?",
-                                "Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                        if (response == JOptionPane.NO_OPTION) {
-                            return;
-                        } else {
-                            task = vm.resetVM_Task();
-                        }
-                    } else if ("shutdown".equals(actionCommand)) {
-                        int response = JOptionPane.showConfirmDialog(esximon,
-                                "Are you sure want to shutdown \"" + vm.getName() + "\" ?",
-                                "Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                        if (response == JOptionPane.NO_OPTION) {
-                            return;
-                        } else {
-                            vm.shutdownGuest();
-                        }
-                    }
-                    if (task != null) {
-                        task.waitForTask();
-                    }
-                } catch (InterruptedException ex) {
-                    // interrupted 
-                } catch (InvalidState ex) {
-                    JOptionPane.showMessageDialog(esximon, "Invalid State\n"
-                            , "Error", JOptionPane.WARNING_MESSAGE);
-                } catch (TaskInProgress ex) {
-                    JOptionPane.showMessageDialog(esximon, "Task Inprogress\n"
-                            + ex.getMessage() + "\n" + ex.getTask().getVal()
-                            + "\n" + ex.getTask().getType(), "Error", JOptionPane.WARNING_MESSAGE);
-                } catch (ToolsUnavailable ex) {
-                    JOptionPane.showMessageDialog(esximon, "Cannot complete operation "
-                            + "because VMware\n Tools is not running in this virtual machine.", "Error", JOptionPane.WARNING_MESSAGE);
-                } catch (RestrictedVersion ex) {
-                    try {
-                        /* Seems remote ESXi server doesn't accept command via VI API
-                         * try to run command via SSH
-                         */
-                        runCommandViaSsh(actionCommand);
-                    } catch (Exception ex2) {
-                        /* Fummm, command faild via SSH too... Report the result to user. */
-                        logger.severe("runCommandViaSSH recieved IOException");
-                        ex.printStackTrace();
-                        JOptionPane.showMessageDialog(esximon, "RestrictedVersion\n", "Error", JOptionPane.WARNING_MESSAGE);
-                    }
-
-                } catch (RuntimeFault ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(esximon, "RuntimeFault\n", "Error", JOptionPane.WARNING_MESSAGE);
-                } catch (RemoteException ex) {
-                    JOptionPane.showMessageDialog(esximon, "RemoteFault\n", "Error", JOptionPane.WARNING_MESSAGE);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                } finally {
-                    esximon.getProgressBar().setIndeterminate(false);
-                }
-                esximon.updateVMLIstPanel();
-                logger.finer("panel update request posted");
+                doCommand(actionCommand);
             }
         });
+    }
+
+    private void doCommand(String command) throws HeadlessException {
+        esximon.getProgressBar().setIndeterminate(true);
+        try {
+            Task task = null;
+            if ("poweroff".equals(command)) {
+                int response = JOptionPane.showConfirmDialog(esximon,
+                        "Are you sure want to power down \"" + vm.getName() + "\" ?",
+                        "Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (response == JOptionPane.NO_OPTION) {
+                    return;
+                } else {
+                    task = vm.powerOffVM_Task();
+                }
+            } else if ("poweron".equals(command)) {
+                task = vm.powerOnVM_Task(null);
+            } else if ("reset".equals(command)) {
+                int response = JOptionPane.showConfirmDialog(esximon,
+                        "Are you sure want to reset \"" + vm.getName() + "\" ?",
+                        "Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (response == JOptionPane.NO_OPTION) {
+                    return;
+                } else {
+                    task = vm.resetVM_Task();
+                }
+            } else if ("shutdown".equals(command)) {
+                int response = JOptionPane.showConfirmDialog(esximon,
+                        "Are you sure want to shutdown \"" + vm.getName() + "\" ?",
+                        "Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (response == JOptionPane.NO_OPTION) {
+                    return;
+                } else {
+                    vm.shutdownGuest();
+                }
+            }
+            if (task != null) {
+                task.waitForTask();
+            }
+        } catch (InterruptedException ex) {
+            // interrupted 
+        } catch (InvalidState ex) {
+            JOptionPane.showMessageDialog(esximon, "Invalid State\n", "Error", JOptionPane.WARNING_MESSAGE);
+        } catch (TaskInProgress ex) {
+            JOptionPane.showMessageDialog(esximon, "Task Inprogress\n"
+                    + ex.getMessage() + "\n" + ex.getTask().getVal()
+                    + "\n" + ex.getTask().getType(), "Error", JOptionPane.WARNING_MESSAGE);
+        } catch (ToolsUnavailable ex) {
+            JOptionPane.showMessageDialog(esximon, "Cannot complete operation "
+                    + "because VMware\n Tools is not running in this virtual machine.", "Error", JOptionPane.WARNING_MESSAGE);
+        } catch (RestrictedVersion ex) {
+            try {
+                /* Seems remote ESXi server doesn't accept command via VI API
+                 * try to run command via SSH
+                 */
+                runCommandViaSsh(command);
+            } catch (Exception ex2) {
+                /* Fummm, command faild via SSH too... Report the result to user. */
+                logger.severe("runCommandViaSSH recieved IOException");
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(esximon, "RestrictedVersion\n", "Error", JOptionPane.WARNING_MESSAGE);
+            }
+
+        } catch (RuntimeFault ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(esximon, "RuntimeFault\n", "Error", JOptionPane.WARNING_MESSAGE);
+        } catch (RemoteException ex) {
+            JOptionPane.showMessageDialog(esximon, "RemoteFault\n", "Error", JOptionPane.WARNING_MESSAGE);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } finally {
+            esximon.getProgressBar().setIndeterminate(false);
+        }
+        esximon.updateVMLIstPanel();
+        logger.finer("panel update request posted");
     }
 
     void runCommandViaSsh(String actionCommand) throws IOException {
@@ -209,7 +213,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                 vmid = ssh_vm.getVmid();
             }
         }
-        
+
         if ("poweroff".equals(actionCommand)) {
             vmsvc.powerOff(vmid);
         } else if ("poweron".equals(actionCommand)) {
