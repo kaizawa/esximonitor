@@ -129,6 +129,9 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
 
     private void doCommand(String command) throws HeadlessException {
         esximon.getProgressBar().setIndeterminate(true);
+        
+                System.out.println("GuestID: " + vm.getGuest().getGuestId());
+                
         try {
             Task task = null;
             if ("poweroff".equals(command)) {

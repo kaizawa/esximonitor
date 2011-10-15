@@ -38,8 +38,19 @@ public class Vmsvc {
      */
     public List<VM> getAllvms() throws IOException {
         List<VM> vms = new ArrayList<VM>();
+
+        List<Integer> vmidList = getVmIds();
+        for(Integer vmid : vmidList){
+            VM vm = getSummary(vmid);
+            vms.add(vm);
+        }
+        return vms;
+    }
+    
+    public List<Integer> getVmIds() throws IOException {
         Session sess = conn.getSession();
         String cmd = "vim-cmd vmsvc/getallvms";
+        List<Integer> vmidList = new ArrayList<Integer>();
 
         logger.finer("cmd: " + cmd);        
         sess.execCommand(cmd);
@@ -48,7 +59,6 @@ public class Vmsvc {
         BufferedReader br = new BufferedReader(new InputStreamReader(stdout));
 
         while (true) {
-            int vmid;
             String line = br.readLine();
             if (line == null) {
                 break;
@@ -69,20 +79,19 @@ public class Vmsvc {
             StringTokenizer tokenizer = new StringTokenizer(line, " ");
             if (tokenizer.hasMoreTokens()) {
                 try {
-                    vmid = Integer.parseInt(tokenizer.nextToken());
+                    vmidList.add(Integer.parseInt(tokenizer.nextToken()));
+                    
                 } catch (NumberFormatException ex ){
                     /* just ignore this line */
                     continue;
                 }
-                VM vm = getSummary(vmid);
-                vms.add(vm);
             }
         }
 
         /* Close this session */
         sess.close();
-        return vms;
-    }
+        return vmidList;
+    }    
 
     /**
      * Get summary info of guest machine specified by vmid
