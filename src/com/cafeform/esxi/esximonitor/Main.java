@@ -147,7 +147,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
     private JComponent createDefaultServerPanel() {
         JPanel defaultServerPanel = new JPanel();
-        defaultServerPanel.setLayout(new BoxLayout(defaultServerPanel, BoxLayout.X_AXIS));
+        defaultServerPanel.setLayout(new BorderLayout());
 
         List<Server> serverList = Prefs.getServers();
         String defaultServer = Prefs.getRootPreferences().get("defaultServer", "");
@@ -165,10 +165,8 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         JButton button = new JButton("Update");
         button.addActionListener(this);
 
-        defaultServerPanel.add(getServerComboBox());
-        defaultServerPanel.add(button);
-        defaultServerPanel.setAlignmentX(LEFT_ALIGNMENT);
-
+        defaultServerPanel.add(getServerComboBox(),BorderLayout.WEST);
+        defaultServerPanel.add(button, BorderLayout.EAST);
 
         return defaultServerPanel;
     }
