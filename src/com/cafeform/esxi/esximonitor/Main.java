@@ -60,7 +60,7 @@ import javax.swing.event.HyperlinkListener;
  */
 public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
-    static String version = "v0.1.9";
+    static String version = "v0.1.10";
     public static Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
     final private static int iconSize = 15;
