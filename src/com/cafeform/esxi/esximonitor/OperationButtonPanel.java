@@ -121,6 +121,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
 
             @Override
             public void run() {
+                esximon.getProgressBar().setIndeterminate(true);
                 try {
                     Task task = null;
                     if ("poweroff".equals(actionCommand)) {
@@ -188,6 +189,8 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                     JOptionPane.showMessageDialog(esximon, "RemoteFault\n", "Error", JOptionPane.WARNING_MESSAGE);
                 } catch (IOException ex) {
                     ex.printStackTrace();
+                } finally {
+                    esximon.getProgressBar().setIndeterminate(false);
                 }
                 esximon.updateVMLIstPanel();
                 logger.finer("panel update request posted");

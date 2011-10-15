@@ -1,5 +1,6 @@
 package com.cafeform.esxi.esximonitor;
 
+import com.vmware.vim25.InvalidLogin;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.mo.Folder;
 import com.vmware.vim25.mo.InventoryNavigator;
@@ -24,7 +25,6 @@ import java.rmi.RemoteException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
@@ -43,6 +43,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -70,6 +71,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private String password;
     private static Folder rootFolder = null;
     ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private JProgressBar progressBar = new JProgressBar();
 
     private Main() {
     }
@@ -91,7 +93,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         }
         logger.finer("main called");
         Main instance = new Main();
-        instance.setSize(new Dimension(300, 100));
+        instance.setMinimumSize(new Dimension(300, 80));
         instance.execute(args);
     }
 
@@ -105,31 +107,39 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
         Server server = Prefs.getDefaServer();
         if (server == null) {
+            /* no default server set. must be first run. */
             logger.finer("server is null");
             new ServerDialog(this).setVisible(true);
-            String name = (String)model.getSelectedItem();
-            setDefaultServer(name);
-            server = Prefs.getServer(name);
+            if (getModel().getSize() > 0) {
+                /* use first server as default server */
+                setDefaultServer((String) getModel().getElementAt(0));
+            }
+            server = Prefs.getDefaServer();
         }
-        
-        setHostname(server.getHostname());
-        setUsername(server.getUsername());
-        setPassword(server.getPassword());
+
+        if (server == null) {
+            /* still no server... */
+        } else {
+            setHostname(server.getHostname());
+            setUsername(server.getUsername());
+            setPassword(server.getPassword());
+        }
 
         setTitle("ESXiMonitor");
         addMenuBar();
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.add(getDefaultServerPanel());
+        mainPanel.add(createDefaultServerPanel());
         mainPanel.add(mainScrollPane);
+        mainPanel.add(createProgressBarPanel());
 
         this.getContentPane().add(mainPanel);
         updateVMLIstPanel();
         this.setVisible(true);
     }
 
-    private JComponent getDefaultServerPanel() {
+    private JComponent createDefaultServerPanel() {
         JPanel defaultServerPanel = new JPanel();
         defaultServerPanel.setLayout(new BoxLayout(defaultServerPanel, BoxLayout.X_AXIS));
 
@@ -140,16 +150,16 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                 model.addElement(server.getHostname());
                 logger.fine("added " + server.getHostname());
                 if (server.getHostname().equals(defaultServer)) {
-                    serverComboBox.setSelectedItem(server.getHostname());
+                    getServerComboBox().setSelectedItem(server.getHostname());
                 }
             }
         }
 
-        serverComboBox.addActionListener(this);
+        getServerComboBox().addActionListener(this);
         JButton button = new JButton("Update");
         button.addActionListener(this);
 
-        defaultServerPanel.add(serverComboBox);
+        defaultServerPanel.add(getServerComboBox());
         defaultServerPanel.add(button);
         defaultServerPanel.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -160,7 +170,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private void addMenuBar() {
         MenuBar menuBar = new MenuBar();
         Menu editMenu = new Menu("Edit");
-        editMenu.add("Servers");
+        editMenu.add("ESXi hosts");
         editMenu.addActionListener(this);
 
         Menu helpMenu = new Menu("Help");
@@ -181,117 +191,133 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
             @Override
             public void run() {
-                logger.severe("update task is running");
-                final JPanel vmListPanel = new JPanel();
-                vmListPanel.setBackground(Color.white);
-                GroupLayout layout = new GroupLayout(vmListPanel);
+                getProgressBar().setIndeterminate(true);
+                try {
+                    logger.fine("update task is running");
+                    final JPanel vmListPanel = new JPanel();
+                    vmListPanel.setBackground(Color.white);
+                    GroupLayout layout = new GroupLayout(vmListPanel);
 
-                vmListPanel.setLayout(layout);
-                layout.setAutoCreateGaps(true);
+                    vmListPanel.setLayout(layout);
+                    layout.setAutoCreateGaps(true);
 
-                /* Create vertical Sequential Group */
-                SequentialGroup vGroup = layout.createSequentialGroup();
+                    /* Create vertical Sequential Group */
+                    SequentialGroup vGroup = layout.createSequentialGroup();
 
-                /* Create  hirizontal Sequential Group */
-                SequentialGroup hGroup = layout.createSequentialGroup();
+                    /* Create  hirizontal Sequential Group */
+                    SequentialGroup hGroup = layout.createSequentialGroup();
 
-                /*  Set vertical/horizontal Sqeuential Group */
-                layout.setVerticalGroup(vGroup);
-                layout.setHorizontalGroup(hGroup);
+                    /*  Set vertical/horizontal Sqeuential Group */
+                    layout.setVerticalGroup(vGroup);
+                    layout.setHorizontalGroup(hGroup);
 
-                /* Craete parallel group for each field */
-                ParallelGroup paraGroupForPower = layout.createParallelGroup();
-                ParallelGroup paraGroupForName = layout.createParallelGroup();
-                ParallelGroup paraGroupForGuestOS = layout.createParallelGroup();
-                ParallelGroup paraGroupForButton = layout.createParallelGroup();
+                    /* Craete parallel group for each field */
+                    ParallelGroup paraGroupForPower = layout.createParallelGroup();
+                    ParallelGroup paraGroupForName = layout.createParallelGroup();
+                    ParallelGroup paraGroupForGuestOS = layout.createParallelGroup();
+                    ParallelGroup paraGroupForButton = layout.createParallelGroup();
 
-                /* Add parallel group for each column (group of same parameter) */
-                hGroup.addGroup(paraGroupForPower);
-                hGroup.addGroup(paraGroupForButton);
-                hGroup.addGroup(paraGroupForName);
-                hGroup.addGroup(paraGroupForGuestOS);
+                    /* Add parallel group for each column (group of same parameter) */
+                    hGroup.addGroup(paraGroupForPower);
+                    hGroup.addGroup(paraGroupForButton);
+                    hGroup.addGroup(paraGroupForName);
+                    hGroup.addGroup(paraGroupForGuestOS);
 
-                ManagedEntity[] mes = new ManagedEntity[0];
+                    ManagedEntity[] mes = new ManagedEntity[0];
 
-                boolean retried = false; /* retry once if error happen  */
-                while (true) {
-                    try {
-                        InventoryNavigator in = new InventoryNavigator(getRootFolder());
-                        logger.fine("RootFolder: " + getRootFolder().getName());
-                        mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
-                        if (mes == null || mes.length == 0) {
+                    boolean retried = false; /* retry once if error happen  */
+                    while (true) {
+                        try {
+                            InventoryNavigator in = new InventoryNavigator(getRootFolder());
+                            logger.fine("RootFolder: " + getRootFolder().getName());
+                            mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
+                            if (mes == null || mes.length == 0) {
+                                setServiceInstance(null);
+                                setRootFolder(null);
+                                if (retried) {
+                                    logger.fine("no vm exist");
+                                    break;
+                                }
+                                logger.fine("no vm returned. retrying...");
+                                retried = true;
+                                continue;
+                            }
+                            logger.finer("total " + mes.length + " VMs found ");
+                        } catch (InvalidLogin ex) {
+                            logger.finer("Login to " + getHostname() + " failed ");
+                            logger.severe(ex.toString());
+                            setServiceInstance(null);
+                            setRootFolder(null);
+                            break;                            
+                        } catch (RemoteException ex) {
+                            logger.finer("RemoteException happen when connecting to " + getHostname()); 
+                            logger.severe(ex.toString());
+                            setServiceInstance(null);
+                            setRootFolder(null);
+                            break;
+                        } catch (IOException ex) {
+                            logger.fine("retrying to conect to ESXi host...");
+                            /* Clear existing service instance and root foler */
                             setServiceInstance(null);
                             setRootFolder(null);
                             if (retried) {
-                                logger.fine("no vm exist");
+                                ex.printStackTrace();
+                                logger.severe("Cannot get VM list");
                                 break;
                             }
-                            logger.fine("no vm returned. retrying...");
                             retried = true;
                             continue;
                         }
-                        logger.finer("total " + mes.length + " VMs found ");
-                    } catch (IOException ex) {
-                        logger.fine("retrying to conect to ESXi host...");
-                        /* Clear existing service instance and root foler */
-                        setServiceInstance(null);
-                        setRootFolder(null);
-                        if (retried) {
-                            ex.printStackTrace();
-                            logger.severe("Cannot get VM list");
-                            break;
+                        break;
+                    }
+
+                    for (ManagedEntity me : mes) {
+                        VirtualMachine vm = (VirtualMachine) me;
+                        logger.finer("found VM: " + vm.getName() + " " + vm.getSummary().getRuntime().getPowerState());
+                        /* Create parallec group for each vms */
+                        ParallelGroup paraGroupForOneVM = layout.createParallelGroup(Alignment.BASELINE);
+                        /* 
+                         * Create Labels corresponding to VM info fields 
+                         */
+                        JLabel powerLabel = new JLabel();
+                        if (vm.getSummary().getRuntime().getPowerState().equals(VirtualMachinePowerState.poweredOn)) {
+                            powerLabel.setToolTipText("Powered ON");
+                            powerLabel.setIcon(lightbulb);
+                        } else {
+                            powerLabel.setToolTipText("Powered OFF");
+                            powerLabel.setIcon(lightbulb_off);
                         }
-                        retried = true;
-                        continue;
+                        JLabel nameLabel = new JLabel(vm.getName());
+                        JLabel guestOSLabel = new JLabel(vm.getConfig().getGuestFullName());
+                        OperationButtonPanel buttonPanel = new OperationButtonPanel(esximon, vm);
+
+                        /* Add components to group for each column */
+                        paraGroupForPower.addComponent(powerLabel);
+                        paraGroupForButton.addComponent(buttonPanel);
+                        paraGroupForName.addComponent(nameLabel);
+                        paraGroupForGuestOS.addComponent(guestOSLabel);
+
+                        /* Add components to group for each row */
+                        paraGroupForOneVM.addComponent(powerLabel).addComponent(nameLabel).addComponent(guestOSLabel).addComponent(buttonPanel);
+
+                        /* Add parallel group for each row (VM parameters) */
+                        vGroup.addGroup(paraGroupForOneVM);
                     }
-                    break;
+
+                    logger.finer("creating new vmListePanel completed");
+                    SwingUtilities.invokeLater(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            mainScrollPane.getViewport().setView(vmListPanel);
+                            pack();
+                            setVisible(true);
+                            logger.fine("vm list updated");
+                        }
+                    });
+                } finally {
+                    getProgressBar().setIndeterminate(false);
                 }
-
-                for (ManagedEntity me : mes) {
-                    VirtualMachine vm = (VirtualMachine) me;
-                    logger.finer("found VM: " + vm.getName() + " " + vm.getSummary().getRuntime().getPowerState());
-                    /* Create parallec group for each vms */
-                    ParallelGroup paraGroupForOneVM = layout.createParallelGroup(Alignment.BASELINE);
-                    /* 
-                     * Create Labels corresponding to VM info fields 
-                     */
-                    JLabel powerLabel = new JLabel();
-                    if (vm.getSummary().getRuntime().getPowerState().equals(VirtualMachinePowerState.poweredOn)) {
-                        powerLabel.setToolTipText("Powered ON");
-                        powerLabel.setIcon(lightbulb);
-                    } else {
-                        powerLabel.setToolTipText("Powered OFF");
-                        powerLabel.setIcon(lightbulb_off);
-                    }
-                    JLabel nameLabel = new JLabel(vm.getName());
-                    JLabel guestOSLabel = new JLabel(vm.getConfig().getGuestFullName());
-                    OperationButtonPanel buttonPanel = new OperationButtonPanel(esximon, vm);
-
-                    /* Add components to group for each column */
-                    paraGroupForPower.addComponent(powerLabel);
-                    paraGroupForButton.addComponent(buttonPanel);
-                    paraGroupForName.addComponent(nameLabel);
-                    paraGroupForGuestOS.addComponent(guestOSLabel);
-
-                    /* Add components to group for each row */
-                    paraGroupForOneVM.addComponent(powerLabel).addComponent(nameLabel).addComponent(guestOSLabel).addComponent(buttonPanel);
-
-                    /* Add parallel group for each row (VM parameters) */
-                    vGroup.addGroup(paraGroupForOneVM);
-                }
-
-
-                logger.finer("creating new vmListePanel completed");
-                SwingUtilities.invokeLater(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        mainScrollPane.getViewport().setView(vmListPanel);
-                        pack();
-                        setVisible(true);
-                        logger.fine("vm list updated");
-                    }
-                });
             }
         });
     }
@@ -363,14 +389,10 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     /**
      * @return the serviceInstance
      */
-    public ServiceInstance getServiceInstance() throws MalformedURLException {
+    public ServiceInstance getServiceInstance() throws MalformedURLException, RemoteException {
 
         if (serviceInstance == null) {
-            try {
-                serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
-            } catch (RemoteException ex) {
-                logger.severe(getUsername() + " " + getPassword() + " " + ex.toString());
-            }
+            serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
         }
         return serviceInstance;
     }
@@ -405,7 +427,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     public void actionPerformed(ActionEvent ae) {
         String cmd = ae.getActionCommand();
         logger.finer("actionPerformed called: " + cmd);
-        if ("Servers".equals(cmd)) {
+        if ("ESXi hosts".equals(cmd)) {
             ServerDialog dialog = new ServerDialog(this);
             dialog.setVisible(true);
         } else if ("About ESXiMonitor".equals(cmd)) {
@@ -458,13 +480,17 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      */
     private void setDefaultServer(String hostname) {
         setHostname(hostname);
+        if(hostname == null){
+            return;
+        }
+        
         /* Change default server to this new server */
         Prefs.getRootPreferences().put("defaultServer", hostname);
 
         /* get Server object of default server*/
         Server server = Prefs.getDefaServer();
         if (server == null) {
-            new ServerDialog(this).setVisible(true);
+                new ServerDialog(this).setVisible(true);
         }
         setHostname(server.getHostname());
         setUsername(server.getUsername());
@@ -488,5 +514,26 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      */
     public DefaultComboBoxModel getModel() {
         return model;
+    }
+
+    private JPanel createProgressBarPanel() {
+        JPanel panel = new JPanel();
+        panel.add(getProgressBar());
+        panel.setAlignmentX(0.0f);
+        return panel;
+    }
+
+    /**
+     * @return the progressBar
+     */
+    public JProgressBar getProgressBar() {
+        return progressBar;
+    }
+
+    /**
+     * @return the serverComboBox
+     */
+    public JComboBox getServerComboBox() {
+        return serverComboBox;
     }
 }
