@@ -1,27 +1,17 @@
 package com.cafeform.esxi.esximonitor;
 
+import com.vmware.vim25.mo.VirtualMachine;
 import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.LineBorder;
 
 /**
@@ -29,15 +19,24 @@ import javax.swing.border.LineBorder;
  * And it also allows to add new ESXi host.
  * 
  */
-public class ServerDialog extends JDialog implements ActionListener, KeyListener {
+public class ServerDialog extends JDialog implements ActionListener {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static public Logger logger = Logger.getLogger(ServerDialog.class.getName());
     Main esximon;
-    JTextField hostnameTextField = new JTextField();
-    JPasswordField passwordTextField = new JPasswordField();
-    JTextField usernameTextField = new JTextField("root");
     JScrollPane serverListScrollPane = new JScrollPane();
     Preferences rootPref = Prefs.getRootPreferences();
+    
+    private VirtualMachine vm;
+    static Icon delete_button = null;
+
+    /* Load Icons */
+    static {
+        try {
+            delete_button = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/delete.png");
+        } catch (IOException ex) {
+            logger.severe("Cannot load icon image");
+        }
+    }
 
     public ServerDialog(Main esximon) {
         super(esximon, "Server", true);
@@ -52,29 +51,24 @@ public class ServerDialog extends JDialog implements ActionListener, KeyListener
         
         /* Contents panel */
         JPanel contentsPanel = new JPanel();
+        contentsPanel.setBackground(Color.white);
         contentsPanel.setBorder(new LineBorder(Color.GRAY));
         contentsPanel.setLayout(new BoxLayout(contentsPanel, BoxLayout.Y_AXIS));
         
         /* Button Panel */
         JPanel buttonPanel = new JPanel();
         JButton okButton = new JButton("OK");
-        okButton.setAlignmentX(LEFT_ALIGNMENT);
+        JButton newButton = new JButton("New");
         okButton.addActionListener(this);
+        newButton.addActionListener(this);
+        buttonPanel.add(newButton);
         buttonPanel.add(okButton);
+        serverListScrollPane.setBackground(Color.white);
 
         JLabel serverListLabel = new JLabel("ESXi Host List");
         serverListLabel.setAlignmentX(CENTER_ALIGNMENT);        
         contentsPanel.add(serverListLabel);        
-        
         contentsPanel.add(serverListScrollPane);
-        
-        JLabel addServerLabel = new JLabel("Add New ESXi Host");
-        addServerLabel.setAlignmentX(CENTER_ALIGNMENT);        
-        
-        contentsPanel.add(addServerLabel);
-
-        contentsPanel.add(createNewServerPanel());
-
         dialogPanel.add(contentsPanel);
         dialogPanel.add(buttonPanel);
 
@@ -83,12 +77,7 @@ public class ServerDialog extends JDialog implements ActionListener, KeyListener
         this.pack();
     }
 
-    private void doAdd(String hostname, String username, String password) {
-        Prefs.putServer(hostname, username, password);
-        esximon.getModel().addElement(hostname);
-        hostnameTextField.setText("");
-        passwordTextField.setText("");
-    }
+
 
     /**
      * Update ESXi host list shown in this Dialog window
@@ -104,43 +93,17 @@ public class ServerDialog extends JDialog implements ActionListener, KeyListener
                 JLabel serverLabel = new JLabel(server.getHostname());
                 serverPanel.setBackground(Color.white);
                 serverPanel.setLayout(new BoxLayout(serverPanel, BoxLayout.X_AXIS));
-                JButton deleteButton = new JButton("Delete");
+                JButton deleteButton = new JButton(delete_button);
                 deleteButton.setActionCommand("Delete:" + server.getHostname());
                 deleteButton.addActionListener(this);
 
+                serverPanel.add(deleteButton);                
                 serverPanel.add(serverLabel);
-                serverPanel.add(deleteButton);
                 serverPanel.setAlignmentX(LEFT_ALIGNMENT);
                 serverListPanel.add(serverPanel);
             }
         }
         serverListScrollPane.getViewport().setView(serverListPanel);
-    }
-
-    private JComponent createNewServerPanel() {
-        JPanel newServerPanel = new JPanel();
-        newServerPanel.setLayout(new BoxLayout(newServerPanel, BoxLayout.Y_AXIS));
-
-        JPanel textPanel = new JPanel();
-        JButton addButton = new JButton("Add");
-        addButton.addActionListener(this);
-
-        hostnameTextField.addKeyListener(this);
-        usernameTextField.addKeyListener(this);
-        passwordTextField.addKeyListener(this);
-
-        textPanel.setLayout(new GridLayout(2, 3));
-        textPanel.add(new JLabel("Hostame"));
-        textPanel.add(new JLabel("User"));
-        textPanel.add(new JLabel("Password"));
-        textPanel.add(hostnameTextField);
-        textPanel.add(usernameTextField);
-        textPanel.add(passwordTextField);
-
-        newServerPanel.add(textPanel);
-        newServerPanel.add(addButton);
-
-        return newServerPanel;
     }
 
     @Override
@@ -150,11 +113,10 @@ public class ServerDialog extends JDialog implements ActionListener, KeyListener
 
 
         logger.finer("get " + cmd + " action command");
-        if ("Add".equals(cmd)) {
-            String hostname = hostnameTextField.getText();
-            String username = usernameTextField.getText();
-            String password = new String(passwordTextField.getPassword());            
-            doAdd(hostname, username, password);
+        if ("New".equals(cmd)) {
+            NewServerDialog newDialog = new NewServerDialog(esximon);
+            newDialog.setVisible(true);          
+            updateServerList();
         } else if (cmd.startsWith("Delete")) {
             String pair[] = cmd.split(":", 2);
             String hostname = pair[1];
@@ -187,31 +149,5 @@ public class ServerDialog extends JDialog implements ActionListener, KeyListener
                 dialog.pack();
             }
         });
-    }
-
-    @Override
-    public void keyTyped(KeyEvent ke) {
-    }
-
-    @Override
-    public void keyPressed(KeyEvent ke) {
-        if (ke.getKeyCode() == 10) {
-            final JDialog dialog = this;
-            String hostname = hostnameTextField.getText();
-            String username = usernameTextField.getText();
-            String password = new String(passwordTextField.getPassword());
-            doAdd(hostname, username, password);
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    updateServerList();
-                    dialog.pack();
-                }
-            });
-        }
-    }
-
-    @Override
-    public void keyReleased(KeyEvent ke) {
     }
 }

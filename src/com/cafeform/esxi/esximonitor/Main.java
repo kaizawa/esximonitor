@@ -60,7 +60,7 @@ import javax.swing.event.HyperlinkListener;
  */
 public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
-    static String version = "v0.2.0";
+    static String version = "v0.2.1";
     public static Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
     final private static int iconSize = 15;
@@ -115,7 +115,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         if (server == null) {
             /* no default server set. must be first run. */
             logger.finer("server is null");
-            new ServerDialog(this).setVisible(true);
+            new NewServerDialog(this).setVisible(true);
             if (getModel().getSize() > 0) {
                 /* use first server as default server */
                 setDefaultServer((String) getModel().getElementAt(0));
