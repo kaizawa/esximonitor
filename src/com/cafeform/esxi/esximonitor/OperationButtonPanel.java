@@ -78,7 +78,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
 
         /* Power On */
         JButton powerOnButton = new JButton(control_play_blue);
-        powerOffButton.setBackground(Color.white);
+        powerOnButton.setBackground(Color.white);
         powerOnButton.setToolTipText("Power ON");
         powerOnButton.setActionCommand("poweron");
         powerOnButton.addActionListener(this);
