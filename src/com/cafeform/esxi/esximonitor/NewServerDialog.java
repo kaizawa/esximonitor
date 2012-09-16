@@ -25,6 +25,13 @@ public class NewServerDialog extends JDialog implements ActionListener, KeyListe
     JPasswordField passwordTextField = new JPasswordField();
     JTextField usernameTextField = new JTextField("root");    
     Main esximon;
+    private String hostname;
+    private String username;
+    private String password;
+    
+    public String getHostname(){
+        return hostname;
+    }
 
     public NewServerDialog(Main esximon) {
         super(esximon, "New Server", true);
@@ -44,10 +51,10 @@ public class NewServerDialog extends JDialog implements ActionListener, KeyListe
 
         logger.finer("get " + cmd + " action command");
         if ("Add".equals(cmd)) {
-            String hostname = hostnameTextField.getText();
-            String username = usernameTextField.getText();
-            String password = new String(passwordTextField.getPassword());            
-            doAdd(hostname, username, password);  
+            hostname = hostnameTextField.getText();
+            username = usernameTextField.getText();
+            password = new String(passwordTextField.getPassword());            
+            doAdd();
             this.setVisible(false);
             this.dispose();
         } else if ("Cancel".equals(cmd)) {
@@ -64,14 +71,14 @@ public class NewServerDialog extends JDialog implements ActionListener, KeyListe
         });
     }
     
-    private void doAdd(String hostname, String username, String password) {
+    private void doAdd(){
+        System.out.println("doAdd called " + hostname);
         Prefs.putServer(hostname, username, password);
-        esximon.getModel().addElement(hostname);
         hostnameTextField.setText("");
         passwordTextField.setText("");
     }
     
-       @Override
+    @Override
     public void keyTyped(KeyEvent ke) {
     }
 
@@ -79,10 +86,10 @@ public class NewServerDialog extends JDialog implements ActionListener, KeyListe
     public void keyPressed(KeyEvent ke) {
         if (ke.getKeyCode() == 10) {
             final JDialog dialog = this;
-            String hostname = hostnameTextField.getText();
-            String username = usernameTextField.getText();
-            String password = new String(passwordTextField.getPassword());
-            doAdd(hostname, username, password);
+            hostname = hostnameTextField.getText();
+            username = usernameTextField.getText();
+            password = new String(passwordTextField.getPassword());
+            doAdd();
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {

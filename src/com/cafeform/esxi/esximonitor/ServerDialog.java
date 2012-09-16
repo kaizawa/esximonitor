@@ -74,8 +74,6 @@ public class ServerDialog extends JDialog implements ActionListener {
         this.pack();
     }
 
-
-
     /**
      * Update ESXi host list shown in this Dialog window
      */
@@ -107,12 +105,14 @@ public class ServerDialog extends JDialog implements ActionListener {
     public void actionPerformed(ActionEvent ae) {
         String cmd = ae.getActionCommand();
         final JDialog dialog = this;
-
+        DefaultComboBoxModel model = esximon.getModel();    
 
         logger.finer("get " + cmd + " action command");
         if ("New".equals(cmd)) {
             NewServerDialog newDialog = new NewServerDialog(esximon);
-            newDialog.setVisible(true);          
+            newDialog.setVisible(true); 
+            String newHostname = newDialog.getHostname();
+            model.insertElementAt(newHostname, 0);
             updateServerList();
         } else if (cmd.startsWith("Delete")) {
             String pair[] = cmd.split(":", 2);
@@ -121,7 +121,6 @@ public class ServerDialog extends JDialog implements ActionListener {
             Prefs.popServer(hostname);
             
             JComboBox combo = esximon.getServerComboBox();
-            DefaultComboBoxModel model = esximon.getModel();    
             for(int i = 0; i < model.getSize(); i++) {
                 String name = (String) model.getElementAt(i);
                 if(name.equals(hostname)){
@@ -130,10 +129,12 @@ public class ServerDialog extends JDialog implements ActionListener {
                     break;
                 }
             }
-//            esximon.getServerComboBox().repaint();
-            
-            
+            combo.repaint();
+            esximon.updateVMLIstPanel();            
         } else if ("OK".equals(cmd)) {
+            if(null == model.getSelectedItem()){
+                model.setSelectedItem(model.getElementAt(0));
+            }
             this.setVisible(false);
             this.dispose();
         }

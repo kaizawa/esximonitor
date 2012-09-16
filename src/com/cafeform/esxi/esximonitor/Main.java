@@ -26,36 +26,35 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 /**
- * ESXiMonitor <br>
- * Simple Monitor of remote ESXi host. It enables to monitor power status
- * of each virtual macnine running o ESXi host.
- * 
+ * ESXiMonitor <br> Simple Monitor of remote ESXi host. It enables to monitor
+ * power status of each virtual macnine running o ESXi host.
+ *
  */
 public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
     static String version = "v0.2.1";
-    public static Logger logger = Logger.getLogger(Main.class.getName());
+    public static final Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
     final public static int iconSize = 15;
     static Icon lightbulb = null;
     static Icon lightbulb_off = null;
     private DefaultComboBoxModel model = new DefaultComboBoxModel();
     private JComboBox serverComboBox = new JComboBox(model);
-    private String hostname;
-    private String username;
-    private String password;
+    private String hostname = "";
+    private String username = "";
+    private String password = "";
     private static Folder rootFolder = null;
     ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private JProgressBar progressBar = null;
     private JLabel statusLabel = new JLabel();
     private JScrollPane mainScrollPane = new JScrollPane();
-    public static final String strAllServers= "All Servers";
-    
 
     private Main() {
     }
 
-    /* Load Icons */
+    /*
+     * Load Icons
+     */
     static {
         try {
             lightbulb = getScaledImageIcon("com/cafeform/esxi/esximonitor/lightbulb.png");
@@ -87,18 +86,20 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
         Server server = Prefs.getDefaultServer();
         if (server == null) {
-            /* no default server set. must be first run. */
+            /*
+             * no default server set. must be first run.
+             */
             logger.finer("server is null");
-            new NewServerDialog(this).setVisible(true);
-            if (getModel().getSize() > 0) {
-                /* use first server as default server */
-                setDefaultServer((String) getModel().getElementAt(0));
-            }
+            
+            NewServerDialog newDialog = new NewServerDialog(this);
+            newDialog.setVisible(true);
+
+            setDefaultServer(newDialog.getHostname());                
             server = Prefs.getDefaultServer();
         }
 
         if (server == null) {
-            /* still no server... */
+            logger.finer("server is stil null");
         } else {
             setHostname(server.getHostname());
             setUsername(server.getUsername());
@@ -115,8 +116,8 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         mainPanel.add(createStatusBarPanel());
 
         this.getContentPane().add(mainPanel);
+        this.setVisible(true);        
         updateVMLIstPanel();
-        this.setVisible(true);
     }
 
     private JComponent createDefaultServerPanel() {
@@ -134,13 +135,12 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                 }
             }
         }
-        model.addElement(strAllServers);
 
         getServerComboBox().addActionListener(this);
         JButton button = new JButton("Update");
         button.addActionListener(this);
 
-        defaultServerPanel.add(getServerComboBox(),BorderLayout.WEST);
+        defaultServerPanel.add(getServerComboBox(), BorderLayout.WEST);
         defaultServerPanel.add(button, BorderLayout.EAST);
 
         return defaultServerPanel;
@@ -181,23 +181,34 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                     vmListPanel.setLayout(layout);
                     layout.setAutoCreateGaps(true);
 
-                    /* Create vertical Sequential Group */
+                    /*
+                     * Create vertical Sequential Group
+                     */
                     SequentialGroup vGroup = layout.createSequentialGroup();
 
-                    /* Create  hirizontal Sequential Group */
+                    /*
+                     * Create hirizontal Sequential Group
+                     */
                     SequentialGroup hGroup = layout.createSequentialGroup();
 
-                    /*  Set vertical/horizontal Sqeuential Group */
+                    /*
+                     * Set vertical/horizontal Sqeuential Group
+                     */
                     layout.setVerticalGroup(vGroup);
                     layout.setHorizontalGroup(hGroup);
 
-                    /* Craete parallel group for each field */
+                    /*
+                     * Craete parallel group for each field
+                     */
                     ParallelGroup paraGroupForPower = layout.createParallelGroup();
                     ParallelGroup paraGroupForName = layout.createParallelGroup();
                     ParallelGroup paraGroupForGuestOS = layout.createParallelGroup();
                     ParallelGroup paraGroupForButton = layout.createParallelGroup();
 
-                    /* Add parallel group for each column (group of same parameter) */
+                    /*
+                     * Add parallel group for each column (group of same
+                     * parameter)
+                     */
                     hGroup.addGroup(paraGroupForPower);
                     hGroup.addGroup(paraGroupForButton);
                     hGroup.addGroup(paraGroupForName);
@@ -206,9 +217,10 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                     ManagedEntity[] mes = new ManagedEntity[0];
 
                     boolean retried = false; /* retry once if error happen  */
+                    
                     while (true) {
                         try {
-                            InventoryNavigator in = new InventoryNavigator(getRootFolder());
+                            //InventoryNavigator in = new InventoryNavigator(getRootFolder());
                             logger.fine("RootFolder: " + getRootFolder().getName());
                             mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
                             if (mes == null || mes.length == 0) {
@@ -226,9 +238,9 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                             logger.finer("Login to " + getHostname() + " failed ");
                             logger.severe(ex.toString());
                             resetServer();
-                            break;                            
+                            break;
                         } catch (RemoteException ex) {
-                            logger.finer("RemoteException happen when connecting to " + getHostname()); 
+                            logger.finer("RemoteException happen when connecting to " + getHostname());
                             logger.severe(ex.toString());
                             resetServer();
                             break;
@@ -249,10 +261,12 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                     for (ManagedEntity me : mes) {
                         VirtualMachine vm = (VirtualMachine) me;
                         logger.finer("found VM: " + vm.getName() + " " + vm.getSummary().getRuntime().getPowerState());
-                        /* Create parallec group for each vms */
+                        /*
+                         * Create parallec group for each vms
+                         */
                         ParallelGroup paraGroupForOneVM = layout.createParallelGroup(Alignment.BASELINE);
-                        /* 
-                         * Create Labels corresponding to VM info fields 
+                        /*
+                         * Create Labels corresponding to VM info fields
                          */
                         JLabel powerLabel = new JLabel();
                         if (vm.getSummary().getRuntime().getPowerState().equals(VirtualMachinePowerState.poweredOn)) {
@@ -266,16 +280,22 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                         JLabel guestOSLabel = new JLabel(vm.getConfig().getGuestFullName());
                         OperationButtonPanel buttonPanel = new OperationButtonPanel(esximon, vm);
 
-                        /* Add components to group for each column */
+                        /*
+                         * Add components to group for each column
+                         */
                         paraGroupForPower.addComponent(powerLabel);
                         paraGroupForButton.addComponent(buttonPanel);
                         paraGroupForName.addComponent(nameLabel);
                         paraGroupForGuestOS.addComponent(guestOSLabel);
 
-                        /* Add components to group for each row */
+                        /*
+                         * Add components to group for each row
+                         */
                         paraGroupForOneVM.addComponent(powerLabel).addComponent(nameLabel).addComponent(guestOSLabel).addComponent(buttonPanel);
 
-                        /* Add parallel group for each row (VM parameters) */
+                        /*
+                         * Add parallel group for each row (VM parameters)
+                         */
                         vGroup.addGroup(paraGroupForOneVM);
                     }
 
@@ -297,21 +317,25 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
             }
         });
     }
-    
+
     /**
      * Reset current connection with the server
      */
     public void resetServer() {
         try {
-            getServiceInstance().getServerConnection().logout();
+            ServiceInstance svcInst = getServiceInstance();
+            if(null == svcInst){
+                return;
+            }
+            svcInst.getServerConnection().logout();
             setServiceInstance(null);
             setRootFolder(null);
         } catch (MalformedURLException ex) {
             logger.severe(ex.toString());
         } catch (RemoteException ex) {
-            logger.severe(ex.toString());            
+            logger.severe(ex.toString());
         }
-    }    
+    }
 
     /**
      * @param aServiceInstance the serviceInstance to set
@@ -380,8 +404,13 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      * @return the serviceInstance
      */
     public ServiceInstance getServiceInstance() throws MalformedURLException, RemoteException {
+        if("".equals(getHostname())){
+            logger.finer("getHostname returns null");
+            return null;
+        }
 
         if (serviceInstance == null) {
+            logger.finer("serviceInstance is null");
             serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
         }
         return serviceInstance;
@@ -398,15 +427,17 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     }
 
     /**
-     * Load image file from given path, and return scaled icon image specified by
-     * iconSize field.
-     * 
+     * Load image file from given path, and return scaled icon image specified
+     * by iconSize field.
+     *
      * @param path
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public static ImageIcon getScaledImageIcon(String path) throws IOException {
-        /* load icons  */
+        /*
+         * load icons
+         */
         BufferedImage originalImage = ImageIO.read(Main.class.getClassLoader().getResource(path));
         Image smallImage = originalImage.getScaledInstance(iconSize, iconSize, java.awt.Image.SCALE_SMOOTH);
         ImageIcon icon = new javax.swing.ImageIcon(smallImage);
@@ -438,9 +469,13 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
             updateVMLIstPanel();
         } else if ("comboBoxChanged".equals(cmd)) {
             JComboBox comboBox = (JComboBox) ae.getSource();
-            String hostname = (String) comboBox.getSelectedItem();
-            logger.fine(hostname + " is selected.");
-            setDefaultServer(hostname);
+            String selectedHostname = (String) comboBox.getSelectedItem();
+            if (null != selectedHostname) {
+                logger.fine(selectedHostname + " is selected.");
+                setDefaultServer(selectedHostname);
+            } else {
+                setDefaultServer(null);
+            }
             updateVMLIstPanel();
         }
         repaint();
@@ -462,30 +497,38 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     }
 
     /**
-     * Specify default ESXi host to be shown in main window.
-     * This method must be called from actionPerformed.
-     * (except for first load without default server setting)
-     * 
-     * @param hostname 
+     * Specify default ESXi host to be shown in main window. This method must be
+     * called from actionPerformed. (except for first load without default
+     * server setting)
+     *
+     * @param hostname
      */
     private void setDefaultServer(String hostname) {
-        if(hostname == null){
-            return;
-        }
-        
-        /* Change default server to this new server */
-        Prefs.getRootPreferences().put("defaultServer", hostname);
 
-        /* get Server object of default server*/
-        Server server = Prefs.getDefaultServer();
-        if (server == null) {
+        if (hostname == null) {
+            Prefs.getRootPreferences().put("defaultServer", "");
+            setHostname("");
+            setUsername("");
+            setPassword("");
+        } else {
+            /*
+             * Change default server to new server name.
+             */
+            Prefs.getRootPreferences().put("defaultServer", hostname);
+
+            /*
+             * get Server object of default server
+             */
+            Server server = Prefs.getDefaultServer();
+            if (server == null) {
                 new ServerDialog(this).setVisible(true);
+            }
+            setHostname(server.getHostname());
+            setUsername(server.getUsername());
+            setPassword(server.getPassword());
         }
-        setHostname(server.getHostname());
-        setUsername(server.getUsername());
-        setPassword(server.getPassword());
-        resetServer();
-   }
+        resetServer();                            
+    }
 
     /**
      * @return the model
@@ -495,17 +538,17 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     }
 
     private JComponent createStatusBarPanel() {
-        
+
         JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout(5,5));
+        panel.setLayout(new BorderLayout(5, 5));
 
 
-        
-        panel.add(getStatusLabel(),BorderLayout.WEST);
-        panel.add(getProgressBar(), BorderLayout.EAST);        
+
+        panel.add(getStatusLabel(), BorderLayout.WEST);
+        panel.add(getProgressBar(), BorderLayout.EAST);
         Dimension bar_dem = getProgressBar().getMaximumSize();
         Dimension panel_dem = panel.getMaximumSize();
-        panel_dem.setSize(panel_dem.width, bar_dem.height);        
+        panel_dem.setSize(panel_dem.width, bar_dem.height);
         panel.setMaximumSize(panel_dem);
 
         return panel;
@@ -515,7 +558,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      * @return the progressBar
      */
     public JProgressBar getProgressBar() {
-        if(progressBar == null){
+        if (progressBar == null) {
             progressBar = new JProgressBar();
             Dimension dem = progressBar.getMaximumSize();
             dem.setSize(30, dem.height);
