@@ -1,6 +1,5 @@
 handlers = java.util.logging.ConsoleHandler
-.level = FINEST
-java.util.logging.ConsoleHandler.level = FINEST
+java.util.logging.ConsoleHandler.level = FINER
 java.util.logging.ConsoleHandler.formatter = com.cafeform.esxi.SingleLineLogFormatter
 com.cafeform.esxi.esximonitor.level = FINEST
 com.cafeform.esxi.level = FINEST
