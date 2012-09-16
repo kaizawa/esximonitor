@@ -32,7 +32,7 @@ import javax.swing.event.HyperlinkListener;
  */
 public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
-    static String version = "v0.2.1";
+    static String version = "v0.2.2";
     public static final Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
     final public static int iconSize = 15;
