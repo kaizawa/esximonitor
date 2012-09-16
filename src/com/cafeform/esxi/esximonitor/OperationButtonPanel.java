@@ -3,21 +3,17 @@ package com.cafeform.esxi.esximonitor;
 import com.cafeform.esxi.ESXiConnection;
 import com.cafeform.esxi.VM;
 import com.cafeform.esxi.Vmsvc;
-import com.vmware.vim25.InvalidState;
-import com.vmware.vim25.RestrictedVersion;
-import com.vmware.vim25.RuntimeFault;
-import com.vmware.vim25.TaskInProgress;
-import com.vmware.vim25.ToolsUnavailable;
-import com.vmware.vim25.VirtualMachinePowerState;
+import com.vmware.vim25.*;
 import com.vmware.vim25.mo.Task;
 import com.vmware.vim25.mo.VirtualMachine;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -25,8 +21,6 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
 
 /**
  * Panel for buttons for virtial macnine operations
@@ -34,7 +28,7 @@ import javax.swing.border.EmptyBorder;
  */
 public class OperationButtonPanel extends JPanel implements ActionListener {
 
-    static public Logger logger = Logger.getLogger(OperationButtonPanel.class.getName());
+    public static final Logger logger = Logger.getLogger(OperationButtonPanel.class.getName());
     private Main esximon;
 
     private OperationButtonPanel() {
