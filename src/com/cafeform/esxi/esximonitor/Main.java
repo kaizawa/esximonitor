@@ -63,7 +63,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     static String version = "v0.2.1";
     public static Logger logger = Logger.getLogger(Main.class.getName());
     private static ServiceInstance serviceInstance = null;
-    final private static int iconSize = 15;
+    final public static int iconSize = 15;
     static Icon lightbulb = null;
     static Icon lightbulb_off = null;
     private DefaultComboBoxModel model = new DefaultComboBoxModel();
