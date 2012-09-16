@@ -474,6 +474,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                 logger.fine(selectedHostname + " is selected.");
                 setDefaultServer(selectedHostname);
             } else {
+                logger.fine("no host is selected.");          
                 setDefaultServer(null);
             }
             updateVMLIstPanel();
@@ -505,7 +506,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      */
     private void setDefaultServer(String hostname) {
 
-        if (hostname == null) {
+        if (null == hostname) {
             Prefs.getRootPreferences().put("defaultServer", "");
             setHostname("");
             setUsername("");
