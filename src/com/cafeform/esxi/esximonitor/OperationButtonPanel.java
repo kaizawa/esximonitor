@@ -11,10 +11,7 @@ import com.vmware.vim25.ToolsUnavailable;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.mo.Task;
 import com.vmware.vim25.mo.VirtualMachine;
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.GridLayout;
-import java.awt.HeadlessException;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
@@ -28,6 +25,8 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 
 /**
  * Panel for buttons for virtial macnine operations
@@ -69,9 +68,12 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         /* Power off */
         JButton powerOffButton = new JButton(control_stop_blue);
         powerOffButton.setBackground(Color.white);
+        
         powerOffButton.setToolTipText("Power OFF");
         powerOffButton.setActionCommand("poweroff");
         powerOffButton.addActionListener(this);
+        powerOffButton.setPreferredSize(new Dimension(Main.iconSize, Main.iconSize));
+        powerOffButton.setMaximumSize(new Dimension(Main.iconSize, Main.iconSize));
         if (poweredOn == false) {
             powerOffButton.setEnabled(false);
         }
@@ -82,6 +84,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         powerOnButton.setToolTipText("Power ON");
         powerOnButton.setActionCommand("poweron");
         powerOnButton.addActionListener(this);
+        powerOnButton.setPreferredSize(new Dimension(Main.iconSize, Main.iconSize));        
         if (poweredOn) {
             powerOnButton.setEnabled(false);
         }
@@ -92,6 +95,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         resetButton.setToolTipText("Reset");
         resetButton.setActionCommand("reset");
         resetButton.addActionListener(this);
+        resetButton.setPreferredSize(new Dimension(Main.iconSize, Main.iconSize));        
         if (poweredOn == false) {
             resetButton.setEnabled(false);
         }
@@ -102,6 +106,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         shutdownButton.setToolTipText("Shutdown Guest OS");
         shutdownButton.setActionCommand("shutdown");
         shutdownButton.addActionListener(this);
+        shutdownButton.setPreferredSize(new Dimension(Main.iconSize, Main.iconSize));        
         if (poweredOn == false) {
             shutdownButton.setEnabled(false);
         }
