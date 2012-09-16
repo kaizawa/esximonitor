@@ -90,11 +90,11 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
              * no default server set. must be first run.
              */
             logger.finer("server is null");
-            
+
             NewServerDialog newDialog = new NewServerDialog(this);
             newDialog.setVisible(true);
 
-            setDefaultServer(newDialog.getHostname());                
+            setDefaultServer(newDialog.getHostname());
             server = Prefs.getDefaultServer();
         }
 
@@ -116,7 +116,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         mainPanel.add(createStatusBarPanel());
 
         this.getContentPane().add(mainPanel);
-        this.setVisible(true);        
+        this.setVisible(true);
         updateVMLIstPanel();
     }
 
@@ -165,6 +165,24 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
         logger.finer("submitting task");
         final Main esximon = this;
+
+        if ("".equals(getHostname())) {
+            logger.finer("no host is setup. Set empty vmListePanel");
+            SwingUtilities.invokeLater(new Runnable() {
+
+                @Override
+                public void run() {
+                    mainScrollPane.getViewport().setView(new JPanel());
+                    pack();
+                    setVisible(true);
+                    logger.fine("vm list updated");
+                }
+            });
+
+            getStatusLabel().setText("");
+            getProgressBar().setIndeterminate(false);
+            return;
+        }
 
         executor.submit(new Runnable() {
 
@@ -216,8 +234,10 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
                     ManagedEntity[] mes = new ManagedEntity[0];
 
-                    boolean retried = false; /* retry once if error happen  */
-                    
+                    boolean retried = false; /*
+                     * retry once if error happen
+                     */
+
                     while (true) {
                         try {
                             //InventoryNavigator in = new InventoryNavigator(getRootFolder());
@@ -324,10 +344,9 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     public void resetServer() {
         try {
             ServiceInstance svcInst = getServiceInstance();
-            if(null == svcInst){
-                return;
+            if (null != svcInst) {
+                svcInst.getServerConnection().logout();
             }
-            svcInst.getServerConnection().logout();
             setServiceInstance(null);
             setRootFolder(null);
         } catch (MalformedURLException ex) {
@@ -404,7 +423,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      * @return the serviceInstance
      */
     public ServiceInstance getServiceInstance() throws MalformedURLException, RemoteException {
-        if("".equals(getHostname())){
+        if ("".equals(getHostname())) {
             logger.finer("getHostname returns null");
             return null;
         }
@@ -474,7 +493,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                 logger.fine(selectedHostname + " is selected.");
                 setDefaultServer(selectedHostname);
             } else {
-                logger.fine("no host is selected.");          
+                logger.fine("no host is selected.");
                 setDefaultServer(null);
             }
             updateVMLIstPanel();
@@ -528,7 +547,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
             setUsername(server.getUsername());
             setPassword(server.getPassword());
         }
-        resetServer();                            
+        resetServer();
     }
 
     /**
