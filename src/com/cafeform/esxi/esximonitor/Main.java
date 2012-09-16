@@ -49,6 +49,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private JProgressBar progressBar = null;
     private JLabel statusLabel = new JLabel();
     private JScrollPane mainScrollPane = new JScrollPane();
+    public static final String strAllServers= "All Servers";
     
 
     private Main() {
@@ -133,6 +134,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                 }
             }
         }
+        model.addElement(strAllServers);
 
         getServerComboBox().addActionListener(this);
         JButton button = new JButton("Update");
@@ -467,7 +469,6 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
      * @param hostname 
      */
     private void setDefaultServer(String hostname) {
-        setHostname(hostname);
         if(hostname == null){
             return;
         }
@@ -484,15 +485,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         setUsername(server.getUsername());
         setPassword(server.getPassword());
         resetServer();
-
-        for (int i = 0; i < model.getSize(); i++) {
-            String name = (String) model.getElementAt(i);
-            if (name.equals(hostname)) {
-                model.setSelectedItem(name);
-                break;
-            }
-        }
-    }
+   }
 
     /**
      * @return the model
