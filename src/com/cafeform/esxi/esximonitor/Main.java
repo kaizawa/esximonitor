@@ -234,13 +234,10 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
                     ManagedEntity[] mes = new ManagedEntity[0];
 
-                    boolean retried = false; /*
-                     * retry once if error happen
-                     */
+                    boolean retried = false; // retry once if error happen
 
                     while (true) {
                         try {
-                            //InventoryNavigator in = new InventoryNavigator(getRootFolder());
                             logger.fine("RootFolder: " + getRootFolder().getName());
                             mes = new InventoryNavigator(getRootFolder()).searchManagedEntities("VirtualMachine");
                             if (mes == null || mes.length == 0) {
