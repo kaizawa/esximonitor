@@ -85,7 +85,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private void execute(String[] args) {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        Server server = Prefs.getDefaServer();
+        Server server = Prefs.getDefaultServer();
         if (server == null) {
             /* no default server set. must be first run. */
             logger.finer("server is null");
@@ -94,7 +94,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                 /* use first server as default server */
                 setDefaultServer((String) getModel().getElementAt(0));
             }
-            server = Prefs.getDefaServer();
+            server = Prefs.getDefaultServer();
         }
 
         if (server == null) {
@@ -477,7 +477,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         Prefs.getRootPreferences().put("defaultServer", hostname);
 
         /* get Server object of default server*/
-        Server server = Prefs.getDefaServer();
+        Server server = Prefs.getDefaultServer();
         if (server == null) {
                 new ServerDialog(this).setVisible(true);
         }
