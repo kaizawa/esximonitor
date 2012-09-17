@@ -75,7 +75,6 @@ public class NewServerDialog extends JDialog implements ActionListener, KeyListe
     
     private void doAdd(){
         System.out.println("doAdd called " + hostname);
-        Prefs.addServer(hostname, username, password);
         server = new Server(hostname, username, password);
         manager.addServer(server);
         hostnameTextField.setText("");
