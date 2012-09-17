@@ -118,7 +118,7 @@ public class ServerDialog extends JDialog implements ActionListener {
             String pair[] = cmd.split(":", 2);
             String hostname = pair[1];
             logger.finer("get Delete action command. " + hostname);
-            Prefs.removeServer(hostname);
+            manager.removeServerByHostname(hostname);
             
             JComboBox combo = esximon.getServerComboBox();
             for(int i = 0; i < model.getSize(); i++) {
