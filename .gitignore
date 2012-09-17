@@ -9,3 +9,5 @@ dist/javadoc
 upload-test.sh
 upload-test
 upload
+src/com/cafeform/esxi/esximonitor/.nfs*
+.gitignore
