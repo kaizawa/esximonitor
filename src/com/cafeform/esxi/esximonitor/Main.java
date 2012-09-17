@@ -1,8 +1,6 @@
 package com.cafeform.esxi.esximonitor;
 
-import com.vmware.vim25.InvalidLogin;
 import com.vmware.vim25.VirtualMachinePowerState;
-import com.vmware.vim25.mo.InventoryNavigator;
 import com.vmware.vim25.mo.ManagedEntity;
 import com.vmware.vim25.mo.VirtualMachine;
 import java.awt.*;
@@ -12,8 +10,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,6 +41,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private JProgressBar progressBar = null;
     private JLabel statusLabel = new JLabel();
     private JScrollPane mainScrollPane = new JScrollPane();
+    private boolean allServerMode = false; // Show VMs on all servers
 
     private Main() {
     }
@@ -86,10 +83,14 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         try {
-            /* Check if defautl server is set */
+            /*
+             * Check if defautl server is set
+             */
             manager.getDefaultServer();
         } catch (NoDefaultServerException ex) {
-            /* no default server set. must be first run.*/
+            /*
+             * no default server set. must be first run.
+             */
             logger.finer("server is not set");
             NewServerDialog newDialog = new NewServerDialog(this);
             newDialog.setVisible(true);
@@ -113,22 +114,28 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private JComponent createDefaultServerPanel() {
         JPanel defaultServerPanel = new JPanel();
         defaultServerPanel.setLayout(new BorderLayout());
-        
+        JCheckBox allServerCheckBox = new JCheckBox("Show all Server");
+        allServerCheckBox.setActionCommand("allServerChecked");
+        JPanel comboBoxPanel = new JPanel();
+
         getServerComboBox().addActionListener(this);
+        allServerCheckBox.addActionListener(this);
         JButton button = new JButton("Update");
         button.addActionListener(this);
 
-        defaultServerPanel.add(getServerComboBox(), BorderLayout.WEST);
+        comboBoxPanel.add(getServerComboBox());
+        comboBoxPanel.add(allServerCheckBox);
+        defaultServerPanel.add(comboBoxPanel, BorderLayout.WEST);
         defaultServerPanel.add(button, BorderLayout.EAST);
 
         List<Server> serverList = manager.getServerList();
         if (serverList.size() > 0) {
             Server defaultServer;
             try {
-                 defaultServer = manager.getDefaultServer();            
-            } catch (NoDefaultServerException ex){
+                defaultServer = manager.getDefaultServer();
+            } catch (NoDefaultServerException ex) {
                 return defaultServerPanel;
-            } 
+            }
             for (Server server : serverList) {
                 model.addElement(server.getHostname());
                 logger.fine("added " + server.getHostname());
@@ -163,7 +170,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         logger.finer("submitting task");
         final Main esximon = this;
         final List<Server> serverList = manager.getServerList();
-        
+
         logger.finer(serverList.size() + " server(s) registerd");
 
         /*
@@ -233,8 +240,8 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                         logger.finer(managedEntityArray.length + " VM found on " + server.getHostname());
 
                         for (ManagedEntity managedEntry : managedEntityArray) {
-                            VirtualMachine vm = (VirtualMachine)managedEntry;
-                            
+                            VirtualMachine vm = (VirtualMachine) managedEntry;
+
                             logger.finer("found VM: " + vm.getName() + " " + vm.getSummary().getRuntime().getPowerState());
                             /*
                              * Create parallec group for each vms
@@ -340,7 +347,30 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
             String selectedHostname = (String) comboBox.getSelectedItem();
             setDefaultServerByHostname(selectedHostname);
             updateVMLIstPanel();
+        } else if ("allServerChecked".equals(cmd)) {
+            final boolean comboBoxEnabled;
+
+            JCheckBox checkBox = (JCheckBox) ae.getSource();
+            if (checkBox.isSelected()) {
+                logger.finer("All Server Check box is checked");
+                allServerMode = true;
+                comboBoxEnabled = false;
+            } else {
+                logger.finer("All Server Check box is unchecked");
+                allServerMode = false;
+                comboBoxEnabled = true;
+            }
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    getServerComboBox().setEnabled(comboBoxEnabled);
+                    pack();
+                    setVisible(true);
+                    logger.fine("vm list updated");
+                }
+            });
         }
+
         repaint();
     }
 
