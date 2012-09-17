@@ -224,6 +224,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                     ParallelGroup paraGroupForName = layout.createParallelGroup();
                     ParallelGroup paraGroupForGuestOS = layout.createParallelGroup();
                     ParallelGroup paraGroupForButton = layout.createParallelGroup();
+                    ParallelGroup paraGroupForServer = layout.createParallelGroup();
 
                     /*
                      * Add parallel group for each column (group of same
@@ -232,6 +233,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                     hGroup.addGroup(paraGroupForPower);
                     hGroup.addGroup(paraGroupForButton);
                     hGroup.addGroup(paraGroupForName);
+                    hGroup.addGroup(paraGroupForServer);                    
                     hGroup.addGroup(paraGroupForGuestOS);
 
                     for (Server server : serverList) {
@@ -263,21 +265,26 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                                 powerLabel.setIcon(lightbulb_off);
                             }
                             JLabel nameLabel = new JLabel(vm.getName());
+                            nameLabel.setToolTipText("Virtuam Machine Name");
                             JLabel guestOSLabel = new JLabel(vm.getConfig().getGuestFullName());
+                            guestOSLabel.setToolTipText("OS Type");
                             OperationButtonPanel buttonPanel = new OperationButtonPanel(esximon, vm, server);
+                            JLabel serverLabel = new JLabel(server.getHostname());
+                            serverLabel.setToolTipText("ESXi Server Name");
 
                             /*
                              * Add components to group for each column
                              */
                             paraGroupForPower.addComponent(powerLabel);
                             paraGroupForButton.addComponent(buttonPanel);
+                            paraGroupForServer.addComponent(serverLabel);
                             paraGroupForName.addComponent(nameLabel);
                             paraGroupForGuestOS.addComponent(guestOSLabel);
 
                             /*
                              * Add components to group for each row
                              */
-                            paraGroupForOneVM.addComponent(powerLabel).addComponent(nameLabel).addComponent(guestOSLabel).addComponent(buttonPanel);
+                            paraGroupForOneVM.addComponent(powerLabel).addComponent(nameLabel).addComponent(guestOSLabel).addComponent(buttonPanel).addComponent(serverLabel);
 
                             /*
                              * Add parallel group for each row (VM parameters)
