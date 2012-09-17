@@ -235,6 +235,10 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                     hGroup.addGroup(paraGroupForGuestOS);
 
                     for (Server server : serverList) {
+                        if( !allServerMode && server != manager.getDefaultServer()){
+                            continue;
+                        }
+                        
                         getStatusLabel().setText("Updating VM List of " + server.getHostname());
                         ManagedEntity[] managedEntityArray = server.getVirtualMachineArray();
                         logger.finer(managedEntityArray.length + " VM found on " + server.getHostname());
@@ -369,6 +373,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                     logger.fine("vm list updated");
                 }
             });
+            updateVMLIstPanel();
         }
 
         repaint();
