@@ -17,8 +17,8 @@ import java.util.prefs.Preferences;
 public class ServerManager {
 
     public static final Logger logger = Logger.getLogger(ServerManager.class.getName());
-    private Server defaultServer;
-    List<Server> serverList = null;
+    private Server defaultServer = null;
+    private List<Server> serverList = null;
 
     public Server getDefaultServer() throws NoDefaultServerException {
         if (null == defaultServer) {
@@ -99,7 +99,7 @@ public class ServerManager {
     }
 
     public synchronized Server getServerByHostname(String hostname) {
-        for (Server server : serverList) {
+        for (Server server : getServerList()) {
             if (server.getHostname().equals(hostname)) {
                 return server;
             }
@@ -107,24 +107,16 @@ public class ServerManager {
         return null;
     }
 
-    public boolean isDefautlServerSet() {
-        if (null == defaultServer) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     public synchronized void addServer(Server server) {
         Prefs.addServer(server.getHostname(), server.getUsername(), server.getPassword());
-        serverList.add(server);
+        getServerList().add(server);
         logger.finer(server.getHostname() + " is added");
 
     }
 
     public synchronized void removeServer(Server server) {
         Prefs.removeServer(server.getHostname());
-        serverList.remove(server);
+        getServerList().remove(server);
     }
 
     public void removeServerByHostname(String hostname) {

@@ -85,15 +85,14 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private void execute(String[] args) {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        if (manager.isDefautlServerSet()) {
-            /*
-             * no default server set. must be first run.
-             */
-            logger.finer("server is null");
-
+        try {
+            /* Check if defautl server is set */
+            manager.getDefaultServer();
+        } catch (NoDefaultServerException ex) {
+            /* no default server set. must be first run.*/
+            logger.finer("server is not set");
             NewServerDialog newDialog = new NewServerDialog(this);
             newDialog.setVisible(true);
-
             manager.setDefaultServer(newDialog.getNewServer());
         }
 
@@ -114,10 +113,22 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private JComponent createDefaultServerPanel() {
         JPanel defaultServerPanel = new JPanel();
         defaultServerPanel.setLayout(new BorderLayout());
+        
+        getServerComboBox().addActionListener(this);
+        JButton button = new JButton("Update");
+        button.addActionListener(this);
+
+        defaultServerPanel.add(getServerComboBox(), BorderLayout.WEST);
+        defaultServerPanel.add(button, BorderLayout.EAST);
 
         List<Server> serverList = manager.getServerList();
         if (serverList.size() > 0) {
-            Server defaultServer = manager.getDefaultServer();            
+            Server defaultServer;
+            try {
+                 defaultServer = manager.getDefaultServer();            
+            } catch (NoDefaultServerException ex){
+                return defaultServerPanel;
+            } 
             for (Server server : serverList) {
                 model.addElement(server.getHostname());
                 logger.fine("added " + server.getHostname());
@@ -126,14 +137,6 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                 }
             }
         }
-
-        getServerComboBox().addActionListener(this);
-        JButton button = new JButton("Update");
-        button.addActionListener(this);
-
-        defaultServerPanel.add(getServerComboBox(), BorderLayout.WEST);
-        defaultServerPanel.add(button, BorderLayout.EAST);
-
         return defaultServerPanel;
     }
 
