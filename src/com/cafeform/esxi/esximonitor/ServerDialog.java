@@ -7,7 +7,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 
@@ -21,7 +20,7 @@ public class ServerDialog extends JDialog implements ActionListener {
     static public Logger logger = Logger.getLogger(ServerDialog.class.getName());
     Main esximon;
     JScrollPane serverListScrollPane = new JScrollPane();
-    Preferences rootPref = Prefs.getRootPreferences();
+    private ServerManager manager;
     
     private VirtualMachine vm;
     static Icon delete_button = null;
@@ -41,6 +40,7 @@ public class ServerDialog extends JDialog implements ActionListener {
         this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         this.esximon = esximon;
         this.setBackground(Color.white);
+        this.manager = esximon.getServerManager();
 
         /* Main Panel */
         JPanel dialogPanel = new JPanel();
@@ -78,11 +78,11 @@ public class ServerDialog extends JDialog implements ActionListener {
      * Update ESXi host list shown in this Dialog window
      */
     private void updateServerList() {
-        List<Server> serverList = Prefs.getServers();
+        List<Server> serverList = manager.getServers();
         JPanel serverListPanel = new JPanel();
         if (serverList.size() > 0) {
             serverListPanel.setLayout(new BoxLayout(serverListPanel, BoxLayout.Y_AXIS));
-            for (Server server : Prefs.getServers()) {
+            for (Server server : serverList) {
                 logger.finer("Server: " + server.getHostname());
                 JPanel serverPanel = new JPanel();
                 JLabel serverLabel = new JLabel(server.getHostname());
@@ -118,7 +118,7 @@ public class ServerDialog extends JDialog implements ActionListener {
             String pair[] = cmd.split(":", 2);
             String hostname = pair[1];
             logger.finer("get Delete action command. " + hostname);
-            Prefs.popServer(hostname);
+            Prefs.removeServer(hostname);
             
             JComboBox combo = esximon.getServerComboBox();
             for(int i = 0; i < model.getSize(); i++) {

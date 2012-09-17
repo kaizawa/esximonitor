@@ -38,6 +38,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
     static Icon control_play_blue = null;
     static Icon control_pause_blue = null;
     static Icon exclamation = null;
+    private Server server;
 
     /* Load Icons */
     static {
@@ -51,7 +52,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         }
     }
 
-    public OperationButtonPanel(Main esximon, VirtualMachine vm) {
+    public OperationButtonPanel(Main esximon, VirtualMachine vm, Server server) {
         this.vm = vm;
         this.esximon = esximon;
         boolean poweredOn = vm.getSummary().getRuntime().getPowerState().equals(VirtualMachinePowerState.poweredOn);
@@ -183,7 +184,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                 /* Seems remote ESXi server doesn't accept command via VI API
                  * try to run command via SSH
                  */
-                runCommandViaSsh(command);
+                server.runCommandViaSsh(command, vm);
             } catch (Exception ex2) {
                 /* Fummm, command faild via SSH too... Report the result to user. */
                 logger.severe("runCommandViaSSH recieved IOException");
@@ -203,30 +204,5 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         }
         esximon.updateVMLIstPanel();
         logger.finer("panel update request posted");
-    }
-
-    void runCommandViaSsh(String actionCommand) throws IOException {
-        logger.finer("runCommandViaSsh called");
-        ESXiConnection conn = new ESXiConnection(esximon.getHostname(), esximon.getUsername(), esximon.getPassword());
-        Vmsvc vmsvc = conn.getVmsvc();
-        int vmid = -1;
-
-        for (VM ssh_vm : vmsvc.getAllvms()) {
-            if (ssh_vm.getName().equals(vm.getName())) {
-                vmid = ssh_vm.getVmid();
-            }
-        }
-
-        if ("poweroff".equals(actionCommand)) {
-            vmsvc.powerOff(vmid);
-        } else if ("poweron".equals(actionCommand)) {
-            vmsvc.powerOn(vmid);
-        } else if ("reset".equals(actionCommand)) {
-            vmsvc.powerReset(vmid);
-        } else if ("shutdown".equals(actionCommand)) {
-            vmsvc.powerShutdown(vmid);
-        }
-        logger.finer(vmsvc.powerGetState(vmid));
-        logger.finer("Submit " + actionCommand + " via SSH succeeded");
     }
 }

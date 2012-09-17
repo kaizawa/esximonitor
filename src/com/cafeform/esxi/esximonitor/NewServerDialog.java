@@ -28,6 +28,8 @@ public class NewServerDialog extends JDialog implements ActionListener, KeyListe
     private String hostname;
     private String username;
     private String password;
+    ServerManager manager;
+    Server server;
     
     public String getHostname(){
         return hostname;
@@ -35,7 +37,7 @@ public class NewServerDialog extends JDialog implements ActionListener, KeyListe
 
     public NewServerDialog(Main esximon) {
         super(esximon, "New Server", true);
-        this.esximon = esximon;
+        this.manager = esximon.getServerManager();
         /* Contents panel */
         Container contentpane = this.getContentPane();
         contentpane.setBackground(Color.white);
@@ -73,9 +75,15 @@ public class NewServerDialog extends JDialog implements ActionListener, KeyListe
     
     private void doAdd(){
         System.out.println("doAdd called " + hostname);
-        Prefs.putServer(hostname, username, password);
+        Prefs.addServer(hostname, username, password);
+        server = new Server(hostname, username, password);
+        manager.addServer(server);
         hostnameTextField.setText("");
         passwordTextField.setText("");
+    }
+    
+    public Server getNewServer(){
+        return server;
     }
     
     @Override

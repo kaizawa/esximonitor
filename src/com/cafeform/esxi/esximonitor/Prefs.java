@@ -1,7 +1,5 @@
 package com.cafeform.esxi.esximonitor;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -17,33 +15,10 @@ public class Prefs {
     static Preferences serversPrefs;
 
     /**
-     * Return List of ESXi host info stored in preferences.
-     * 
-     */
-    static List<Server> getServers() {
-        List<Server> serverList = new ArrayList<Server>();
-        try {
-            logger.finer("getServers called");
-            for(String hostname : getServersPreferences().childrenNames()){
-                logger.finest("Server: " + hostname);                
-                Server server = new Server();
-                Preferences serverPrefs = serversPrefs.node(hostname);
-                server.setHostname(hostname);
-                server.setUsername(serverPrefs.get("username", ""));
-                server.setPassword(serverPrefs.get("password", ""));
-                serverList.add(server);
-            }
-        } catch (BackingStoreException ex) {
-            ex.printStackTrace();
-        }
-        return serverList;
-    }
-
-    /**
      * Return top of preference node for this app.
      * @return 
      */
-    static public Preferences getRootPreferences() {
+    static private Preferences getRootPreferences() {
         if (rootPrefs == null) {
             rootPrefs = Preferences.userNodeForPackage(Main.class);
         }
@@ -63,7 +38,7 @@ public class Prefs {
      * @param username
      * @param password 
      */
-    static public void putServer(String hostname, String username, String password)
+    static public void addServer(String hostname, String username, String password)
     {
         logger.finer("hostname=" + hostname + ", username=" + username);
         Preferences serverPrefs = getServersPreferences().node(hostname);
@@ -77,7 +52,7 @@ public class Prefs {
      * Remove ESXi host information from preferences
      * @param hostname 
      */
-    static public void popServer(String hostname)
+    static public void removeServer(String hostname)
     {
         logger.finer("hostname=" + hostname);                        
         Preferences serverPrefs = getServersPreferences().node(hostname);
@@ -88,19 +63,12 @@ public class Prefs {
         }
     }
     
-    static public Server getServer(String hostname){
-        List<Server> servers = Prefs.getServers();
-        for (Server server : servers) {
-            if (server.getHostname().equals(hostname)) {
-                return server;
-            }
-        }
-        return null;
+    static public String getDefaultServerPreference() {
+        Preferences rooPref = getRootPreferences();
+        return(rooPref.get("defaultServer", ""));
     }
     
-    static public Server getDefaultServer(){
-        Preferences rooPref = getRootPreferences();
-        String defaultServer = rooPref.get("defaultServer", "");        
-        return getServer(defaultServer);
+    static public void setDefaultServerPreference(String hostname){
+        getRootPreferences().put("defaultServer", hostname);
     }
 }
