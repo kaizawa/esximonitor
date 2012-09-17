@@ -64,7 +64,7 @@ public class ServerDialog extends JDialog implements ActionListener {
 
         JLabel serverListLabel = new JLabel("ESXi Host List");
         serverListLabel.setAlignmentX(CENTER_ALIGNMENT);        
-        contentsPanel.add(serverListLabel);        
+        dialogPanel.add(serverListLabel);        
         contentsPanel.add(serverListScrollPane);
         dialogPanel.add(contentsPanel);
         dialogPanel.add(buttonPanel);
@@ -78,8 +78,9 @@ public class ServerDialog extends JDialog implements ActionListener {
      * Update ESXi host list shown in this Dialog window
      */
     private void updateServerList() {
-        List<Server> serverList = manager.getServers();
+        List<Server> serverList = manager.getServerList();
         JPanel serverListPanel = new JPanel();
+        serverListPanel.setBackground(Color.white);
         if (serverList.size() > 0) {
             serverListPanel.setLayout(new BoxLayout(serverListPanel, BoxLayout.Y_AXIS));
             for (Server server : serverList) {

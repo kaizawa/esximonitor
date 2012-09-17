@@ -45,7 +45,6 @@ public class Prefs {
         serverPrefs.put("hostname", hostname);
         serverPrefs.put("username", username);        
         serverPrefs.put("password", password);
-        
     }
     
     /**

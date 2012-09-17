@@ -115,7 +115,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         JPanel defaultServerPanel = new JPanel();
         defaultServerPanel.setLayout(new BorderLayout());
 
-        List<Server> serverList = manager.getServers();
+        List<Server> serverList = manager.getServerList();
         if (serverList.size() > 0) {
             Server defaultServer = manager.getDefaultServer();            
             for (Server server : serverList) {
@@ -159,7 +159,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
         logger.finer("submitting task");
         final Main esximon = this;
-        final List<Server> serverList = manager.getServers();
+        final List<Server> serverList = manager.getServerList();
         
         logger.finer(serverList.size() + " server(s) registerd");
 

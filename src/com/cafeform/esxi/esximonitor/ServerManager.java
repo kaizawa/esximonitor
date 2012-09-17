@@ -18,7 +18,7 @@ public class ServerManager {
 
     public static final Logger logger = Logger.getLogger(ServerManager.class.getName());
     private Server defaultServer;
-    List<Server> serverList = new ArrayList<Server>();
+    List<Server> serverList = null;
 
     public Server getDefaultServer() throws NoDefaultServerException {
         if (null == defaultServer) {
@@ -39,8 +39,8 @@ public class ServerManager {
      * @param hostname
      */
     public void setDefaultServerByHostname(String hostname) {
-        if(null == hostname){
-            setDefaultServer(null);            
+        if (null == hostname) {
+            setDefaultServer(null);
         } else {
             setDefaultServer(getServerByHostname(hostname));
         }
@@ -73,20 +73,27 @@ public class ServerManager {
      * Return List of ESXi host info stored in preferences.
      *
      */
-    public List<Server> getServers() {
-        try {
-            logger.finer("getServers called");
-            for (String hostname : Prefs.getServersPreferences().childrenNames()) {
-                logger.finest("Server: " + hostname);
-                Server server = new Server();
-                Preferences serverPrefs = Prefs.getServersPreferences().node(hostname);
-                server.setHostname(hostname);
-                server.setUsername(serverPrefs.get("username", ""));
-                server.setPassword(serverPrefs.get("password", ""));
-                serverList.add(server);
+    public List<Server> getServerList() {
+        /* 
+         * If this is first time to get server list, get list from Preferences.
+         * After that, manage list in own list.
+         */
+        if (null == serverList) {
+            serverList = new ArrayList<Server>();
+            try {
+                logger.finer("getServers called");
+                for (String hostname : Prefs.getServersPreferences().childrenNames()) {
+                    logger.finest("Server: " + hostname);
+                    Server server = new Server();
+                    Preferences serverPrefs = Prefs.getServersPreferences().node(hostname);
+                    server.setHostname(hostname);
+                    server.setUsername(serverPrefs.get("username", ""));
+                    server.setPassword(serverPrefs.get("password", ""));
+                    serverList.add(server);
+                }
+            } catch (BackingStoreException ex) {
+                ex.printStackTrace();
             }
-        } catch (BackingStoreException ex) {
-            ex.printStackTrace();
         }
         return serverList;
     }
@@ -99,9 +106,9 @@ public class ServerManager {
         }
         return null;
     }
-    
-    public boolean isDefautlServerSet(){
-        if(null == defaultServer){
+
+    public boolean isDefautlServerSet() {
+        if (null == defaultServer) {
             return false;
         } else {
             return true;
@@ -112,15 +119,15 @@ public class ServerManager {
         Prefs.addServer(server.getHostname(), server.getUsername(), server.getPassword());
         serverList.add(server);
         logger.finer(server.getHostname() + " is added");
-                
+
     }
-    
+
     public synchronized void removeServer(Server server) {
         Prefs.removeServer(server.getHostname());
         serverList.remove(server);
     }
-    
-    public void removeServerByHostname(String hostname){
+
+    public void removeServerByHostname(String hostname) {
         removeServer(getServerByHostname(hostname));
     }
 }
