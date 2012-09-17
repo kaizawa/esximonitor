@@ -24,11 +24,13 @@ public class ServerDialog extends JDialog implements ActionListener {
     
     private VirtualMachine vm;
     static Icon delete_button = null;
+    static Icon edit_button = null;
 
     /* Load Icons */
     static {
         try {
             delete_button = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/delete.png");
+            edit_button = Main.getScaledImageIcon("com/cafeform/esxi/esximonitor/cog_edit.png");            
         } catch (IOException ex) {
             logger.severe("Cannot load icon image");
         }
@@ -90,11 +92,16 @@ public class ServerDialog extends JDialog implements ActionListener {
                 serverPanel.setBackground(Color.white);
                 serverPanel.setLayout(new BoxLayout(serverPanel, BoxLayout.X_AXIS));
                 JButton deleteButton = new JButton(delete_button);
+                JButton editButton = new JButton(edit_button);                
                 deleteButton.setActionCommand("Delete:" + server.getHostname());
+                editButton.setActionCommand("Edit:" + server.getHostname());                
+                editButton.addActionListener(this);
                 deleteButton.addActionListener(this);
 
-                serverPanel.add(deleteButton);                
-                serverPanel.add(serverLabel);
+                serverPanel.add(editButton);
+                serverPanel.add(deleteButton);                                
+                serverPanel.add(serverLabel);                
+                
                 serverPanel.setAlignmentX(LEFT_ALIGNMENT);
                 serverListPanel.add(serverPanel);
             }
@@ -138,7 +145,14 @@ public class ServerDialog extends JDialog implements ActionListener {
             }
             this.setVisible(false);
             this.dispose();
-        }
+        } else if (cmd.startsWith("Edit")) {
+            String pair[] = cmd.split(":", 2);
+            String hostname = pair[1];
+            logger.finer("get Edit action command. " + hostname);
+            Server server = manager.getServerByHostname(hostname);
+            new EditServerDialog(esximon, server).setVisible(true);
+            updateServerList();
+        } 
 
         SwingUtilities.invokeLater(new Runnable() {
 

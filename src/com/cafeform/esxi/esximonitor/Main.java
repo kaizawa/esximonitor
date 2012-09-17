@@ -94,7 +94,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
             logger.finer("server is not set");
             NewServerDialog newDialog = new NewServerDialog(this);
             newDialog.setVisible(true);
-            manager.setDefaultServer(newDialog.getNewServer());
+            manager.setDefaultServer(newDialog.getServer());
         }
 
         setTitle("ESXiMonitor");

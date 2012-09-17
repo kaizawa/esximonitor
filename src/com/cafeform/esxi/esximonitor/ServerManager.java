@@ -111,7 +111,6 @@ public class ServerManager {
         Prefs.addServer(server.getHostname(), server.getUsername(), server.getPassword());
         getServerList().add(server);
         logger.finer(server.getHostname() + " is added");
-
     }
 
     public synchronized void removeServer(Server server) {
@@ -121,5 +120,11 @@ public class ServerManager {
 
     public void removeServerByHostname(String hostname) {
         removeServer(getServerByHostname(hostname));
+    }
+
+    void editServer(Server server, String username, String password) {
+        server.setUsername(username);
+        server.setPassword(password);
+        Prefs.addServer(server.getHostname(), username, password);
     }
 }
