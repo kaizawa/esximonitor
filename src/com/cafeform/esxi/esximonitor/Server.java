@@ -19,8 +19,8 @@ public class Server {
     private String hostname;
     private String username;
     private String password;
-    private static ServiceInstance serviceInstance = null;
-    private static Folder rootFolder = null;
+    private ServiceInstance serviceInstance = null;
+    private Folder rootFolder = null;
     public static final Logger logger = Logger.getLogger(Server.class.getName());
     
     public Server() {
@@ -95,21 +95,21 @@ public class Server {
     /**
      * @param aServiceInstance the serviceInstance to set
      */
-    public static void setServiceInstance(ServiceInstance aServiceInstance) {
+    private void setServiceInstance(ServiceInstance aServiceInstance) {
         serviceInstance = aServiceInstance;
     }
 
     /**
      * @param aRootFolder the rootFolder to set
      */
-    public static void setRootFolder(Folder aRootFolder) {
+    private void setRootFolder(Folder aRootFolder) {
         rootFolder = aRootFolder;
     }
 
     /**
      * @return the serviceInstance
      */
-    public ServiceInstance getServiceInstance() throws MalformedURLException, RemoteException {
+    private ServiceInstance getServiceInstance() throws MalformedURLException, RemoteException {
         if ("".equals(getHostname())) {
             logger.finer("getHostname returns null");
             return null;
@@ -125,7 +125,7 @@ public class Server {
     /**
      * @return the rootFolder
      */
-    public Folder getRootFolder() throws RemoteException, MalformedURLException {
+    private Folder getRootFolder() throws RemoteException, MalformedURLException {
         if (rootFolder == null) {
             rootFolder = getServiceInstance().getRootFolder();
         }
