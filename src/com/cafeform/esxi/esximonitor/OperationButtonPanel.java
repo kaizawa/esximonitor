@@ -184,12 +184,13 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                 /* Seems remote ESXi server doesn't accept command via VI API
                  * try to run command via SSH
                  */
+                logger.finer("Get RestrictedVersion from ESXi. Try command via SSH.");
                 server.runCommandViaSsh(command, vm);
             } catch (Exception ex2) {
                 /* Fummm, command faild via SSH too... Report the result to user. */
-                logger.severe("runCommandViaSSH recieved IOException");
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(esximon, "RestrictedVersion\n", "Error", JOptionPane.WARNING_MESSAGE);
+                logger.severe("runCommandViaSSH recieved " + ex2.toString());
+                ex2.printStackTrace();
+                JOptionPane.showMessageDialog(esximon, ex2.toString(), "Error", JOptionPane.WARNING_MESSAGE);
             }
 
         } catch (RuntimeFault ex) {
