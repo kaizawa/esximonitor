@@ -59,6 +59,7 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
 
         this.setLayout(new GridLayout(1, 4));
         this.setBackground(Color.white);
+        this.server = server;
 
         /* Power off */
         JButton powerOffButton = new JButton(control_stop_blue);
