@@ -29,7 +29,7 @@ import javax.swing.event.HyperlinkListener;
  */
 public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
-    static String version = "v0.2.3";
+    static String version = "v0.2.4";
     public static final Logger logger = Logger.getLogger(Main.class.getName());
     final public static int iconSize = 15;
     static Icon lightbulb = null;
