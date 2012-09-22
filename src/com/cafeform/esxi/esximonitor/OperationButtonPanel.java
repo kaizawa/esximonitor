@@ -1,8 +1,6 @@
 package com.cafeform.esxi.esximonitor;
 
-import com.cafeform.esxi.ESXiConnection;
-import com.cafeform.esxi.VM;
-import com.cafeform.esxi.Vmsvc;
+import com.cafeform.esxi.RecieveErrorMessageException;
 import com.vmware.vim25.*;
 import com.vmware.vim25.mo.Task;
 import com.vmware.vim25.mo.VirtualMachine;
@@ -180,18 +178,20 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
         } catch (ToolsUnavailable ex) {
             JOptionPane.showMessageDialog(esximon, "Cannot complete operation "
                     + "because VMware\n Tools is not running in this virtual machine.", "Error", JOptionPane.WARNING_MESSAGE);
-        } catch (RestrictedVersion ex) {
+        } catch (RestrictedVersion ex1) {
             try {
                 /* Seems remote ESXi server doesn't accept command via VI API
                  * try to run command via SSH
                  */
                 logger.finer("Get RestrictedVersion from ESXi. Try command via SSH.");
                 server.runCommandViaSsh(command, vm);
-            } catch (Exception ex2) {
+            } catch (RecieveErrorMessageException ex2) {
+                JOptionPane.showMessageDialog(esximon, ex2.getMessage(), "Error", JOptionPane.WARNING_MESSAGE);
+            } catch (Exception ex3) {
                 /* Fummm, command faild via SSH too... Report the result to user. */
-                logger.severe("runCommandViaSSH recieved " + ex2.toString());
-                ex2.printStackTrace();
-                JOptionPane.showMessageDialog(esximon, ex2.toString(), "Error", JOptionPane.WARNING_MESSAGE);
+                logger.severe("runCommandViaSSH recieved " + ex3.toString());
+                ex3.printStackTrace();
+                JOptionPane.showMessageDialog(esximon, ex3.toString(), "Error", JOptionPane.WARNING_MESSAGE);
             }
 
         } catch (RuntimeFault ex) {
