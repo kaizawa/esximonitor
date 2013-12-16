@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -187,20 +188,16 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                 server.runCommandViaSsh(command, vm);
             } catch (RecieveErrorMessageException ex2) {
                 JOptionPane.showMessageDialog(esximon, ex2.getMessage(), "Error", JOptionPane.WARNING_MESSAGE);
-            } catch (Exception ex3) {
+            } catch (IOException ex3) {
                 /* Fummm, command faild via SSH too... Report the result to user. */
-                logger.severe("runCommandViaSSH recieved " + ex3.toString());
-                ex3.printStackTrace();
+                logger.log(Level.SEVERE, "runCommandViaSSH recieved {0}", ex3.toString());
                 JOptionPane.showMessageDialog(esximon, ex3.toString(), "Error", JOptionPane.WARNING_MESSAGE);
             }
 
         } catch (RuntimeFault ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(esximon, "RuntimeFault\n", "Error", JOptionPane.WARNING_MESSAGE);
         } catch (RemoteException ex) {
             JOptionPane.showMessageDialog(esximon, "RemoteFault\n", "Error", JOptionPane.WARNING_MESSAGE);
-        } catch (IOException ex) {
-            ex.printStackTrace();
         } finally {
             esximon.getProgressBar().setIndeterminate(false);
         }

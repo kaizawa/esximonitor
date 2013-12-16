@@ -34,7 +34,7 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     final public static int iconSize = 15;
     static Icon lightbulb = null;
     static Icon lightbulb_off = null;
-    private ServerManager manager = new ServerManager();
+    private ServerManager manager = new ServerManagerImpl();
     private DefaultComboBoxModel model = new DefaultComboBoxModel();
     private JComboBox serverComboBox = new JComboBox(model);
     private ExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -46,7 +46,8 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
     private Main() {
     }
 
-    public ServerManager getServerManager() {
+    public ServerManager getServerManager() 
+    {
         return manager;
     }
 

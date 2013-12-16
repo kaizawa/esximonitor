@@ -11,3 +11,6 @@ upload-test
 upload
 src/com/cafeform/esxi/esximonitor/.nfs*
 .gitignore
+hs_err*
+esximonitor.html
+esximonitor.jnlp

@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.cafeform.esxi.esximonitor;
 
 import java.awt.event.ActionListener;
@@ -21,7 +17,7 @@ public class NewServerDialog extends EditServerDialog implements ActionListener,
     @Override
     protected void doAction(){
         System.out.println("doAdd called " + hostname);
-        server = new Server(hostname, username, password);
+        server = new ServerImpl(hostname, username, password);
         manager.addServer(server);
         hostnameTextField.setText("");
         passwordTextField.setText("");
