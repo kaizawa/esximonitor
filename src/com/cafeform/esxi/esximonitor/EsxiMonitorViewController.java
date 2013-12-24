@@ -11,6 +11,8 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
@@ -20,6 +22,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableColumn;
@@ -28,6 +32,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 
 /**
  *
@@ -59,6 +64,10 @@ public class EsxiMonitorViewController implements Initializable
     private ProgressBar progressBar;
     @FXML
     private Label statusLabel;
+    @FXML
+    private ChoiceBox<Server> serverChoiceBox;
+    @FXML
+    private CheckBox showAllCheckBox;
 
     @Override
     public void initialize(URL url, ResourceBundle rb)
@@ -71,18 +80,63 @@ public class EsxiMonitorViewController implements Initializable
         catch (NoDefaultServerException ex)
         {
             // no default server set. must be first run.
-            //TODO: hoge
-            //@todo implement new server
             logger.finer("server is not set");
-            //NewServerDialog newDialog = new NewServerDialog(this);
-            //newDialog.setVisible(true);
-            //manager.setDefaultServer(newDialog.getServer());
+            try
+            {
+                ServerListViewController.
+                        createEditServerWindow(manager, null, null);
+            } 
+            catch (IOException exi)
+            {
+                logger.log(Level.SEVERE, null, exi);
+                DialogFactory.showSimpleDialog(
+                        "Cannot create dialog window.\n" +
+                                exi.getMessage(), 
+                        "Error", 
+                        getWindow());
+                Platform.exit();
+            }
         }
         statusColumn.setCellValueFactory(new PropertyValueFactory("status"));
         serverColumn.setCellValueFactory(new PropertyValueFactory("serverName"));
         vmNameColumn.setCellValueFactory(new PropertyValueFactory("vmName")); 
         osTypeColumn.setCellValueFactory(new PropertyValueFactory("osType"));
         buttonColumn.setCellValueFactory(new PropertyValueFactory("buttonBox"));
+
+        serverChoiceBox.setItems(manager.getServerList());
+        serverChoiceBox.setValue(manager.getDefaultServer());
+
+        serverChoiceBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Server>()
+        {
+            @Override
+            public void changed(
+                    ObservableValue<? extends Server> ov, 
+                    Server oldServer, 
+                    Server newServer)
+            {
+                if (!Platform.isFxApplicationThread()){
+                    DialogFactory.showSimpleDialog("This is not JavaFX " +
+                            "Application Thread", "Warrning", getWindow());                
+                }
+                if (null != newServer )
+                {
+                    manager.setDefaultServer(newServer);
+                    updateVmListPanel();
+                }
+            }
+        });
+        
+        showAllCheckBox.selectedProperty().addListener(new ChangeListener<Boolean>()
+        {
+            @Override
+            public void changed(ObservableValue<? extends Boolean> ov, Boolean oldVal, Boolean newVal)
+            {
+                allServerMode = newVal;
+                serverChoiceBox.setDisable(newVal);
+                updateVmListPanel();
+            }
+        });
+        
         updateVmListPanel();
     }
 
@@ -150,7 +204,8 @@ public class EsxiMonitorViewController implements Initializable
     }
     
     @FXML
-    private void uandleUpdateButton (ActionEvent event) {
+    private void uandleUpdateButton (ActionEvent event) 
+    {
         updateVmListPanel();
     }
     
@@ -180,7 +235,7 @@ public class EsxiMonitorViewController implements Initializable
             Stage serverListWindows = new Stage(StageStyle.UTILITY);
             serverListWindows.setScene(scene);
             // Set parent window
-            serverListWindows.initOwner(progressBar.getScene().getWindow());
+            serverListWindows.initOwner(getWindow());
             // Enable modal window
             serverListWindows.initModality(Modality.WINDOW_MODAL);
             serverListWindows.setResizable(false);
@@ -211,7 +266,7 @@ public class EsxiMonitorViewController implements Initializable
             Stage serverListWindows = new Stage(StageStyle.UTILITY);
             serverListWindows.setScene(scene);
             // Set parent window
-            serverListWindows.initOwner(progressBar.getScene().getWindow());
+            serverListWindows.initOwner(getWindow());
             // Enable modal window
             serverListWindows.initModality(Modality.WINDOW_MODAL);
             serverListWindows.setResizable(false);
@@ -234,5 +289,10 @@ public class EsxiMonitorViewController implements Initializable
     public Label getStatusLabel () 
     {
         return statusLabel;
+    }
+
+    private Window getWindow()
+    {
+        return progressBar.getScene().getWindow();
     }
 }

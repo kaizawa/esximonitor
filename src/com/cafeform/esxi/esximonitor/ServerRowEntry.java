@@ -4,15 +4,9 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.event.EventHandler;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;
 import javafx.scene.input.MouseEvent;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 
 /**
  * Stands for ESXi host in ESXi server host list window
@@ -59,29 +53,14 @@ public class ServerRowEntry
                     {
                         try
                         {
-                            FXMLLoader loader
-                            = new FXMLLoader(getClass().
-                                    getResource("EditServerView.fxml"));
-                            loader.load();
-                            Parent root = loader.getRoot();
-                            EditServerViewController controller = 
-                                    loader.getController();
-                            controller.setServer(server);
-                            controller.setManager(manager);
-
-                            Scene scene = new Scene(root);
-                            Stage newServerWindows = new Stage(StageStyle.UTILITY);
-                            newServerWindows.setScene(scene);
-                            // Set parent window
-                            newServerWindows.initOwner(parent.getScene().getWindow());
-                            // Enable modal window
-                            newServerWindows.initModality(Modality.WINDOW_MODAL);
-                            newServerWindows.setResizable(false);
-                            newServerWindows.setTitle("Modify Server");
-                            newServerWindows.showAndWait();
+                            ServerListViewController.createEditServerWindow(
+                                    manager,
+                                    server,
+                                    parent.getScene().getWindow());
                         } 
                         catch (IOException ex)
                         {
+                            //TODO: show erro dialog
                             Logger.getLogger(
                                     EsxiMonitorViewController.class.getName()).
                                     log(Level.SEVERE, null, ex);

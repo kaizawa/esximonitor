@@ -8,6 +8,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.stage.Window;
 
 /**
  *
@@ -70,7 +71,7 @@ public class EditServerViewController implements Initializable
         {
             manager.editServer(server, username.getText(), password.getText());
         }
-        password.getScene().getWindow().hide();       
+        getWindow().hide();       
     }
     
     @FXML
@@ -82,6 +83,11 @@ public class EditServerViewController implements Initializable
     void setButtonText(String text)
     {
         editButton.setText(text);
+    }
+
+    private Window getWindow()
+    {
+        return password.getScene().getWindow();
     }
 }
 

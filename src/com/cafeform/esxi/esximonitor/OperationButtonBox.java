@@ -11,8 +11,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -33,10 +35,12 @@ public class OperationButtonBox extends HBox
     private ImageView playIcon;
     private ImageView pauseIcon;
     private ImageView exclamationIcon;
+    private ImageView blankIcon;    
     private final Server server;
     private final ExecutorService executor = 
             Executors.newSingleThreadScheduledExecutor();
     EsxiMonitorViewController controller;
+    private final boolean poweredOn;
 
     public OperationButtonBox(
             VirtualMachine vm, 
@@ -47,44 +51,15 @@ public class OperationButtonBox extends HBox
 
         this.vm = vm;
         this.server = server;
-        boolean poweredOn = vm.getSummary().getRuntime().getPowerState().
+        poweredOn = vm.getSummary().getRuntime().getPowerState().
                 equals(VirtualMachinePowerState.poweredOn);
         this.controller = controller;
-
-        // Power off
-        Button powerOffButton = new Button("", stopIcon);
-        powerOffButton.setDisable(!poweredOn);
-        //powerOffButton.setToolTipText("Power OFF");
-        powerOffButton.addEventHandler(
-                MouseEvent.MOUSE_CLICKED,
-                new ButtonEventHandler(POWER_OFF));
-
-        /* Power On */
-        Button powerOnButton = new Button("", playIcon);
-        powerOnButton.setDisable(poweredOn);
-        powerOnButton.addEventHandler(
-                MouseEvent.MOUSE_CLICKED,
-                new ButtonEventHandler(POWER_ON));
-
-        /* Power reset */
-        Button resetButton = new Button("", pauseIcon);
-        resetButton.setDisable(!poweredOn);
-        resetButton.addEventHandler(
-                MouseEvent.MOUSE_CLICKED,
-                new ButtonEventHandler(RESET));
-
-        /* Shutdown Guest OS */
-        Button shutdownButton = new Button("", exclamationIcon);
-        shutdownButton.setDisable(!poweredOn);
-        shutdownButton.addEventHandler(
-                MouseEvent.MOUSE_CLICKED,
-                new ButtonEventHandler(SHUTDOWN));
-
+        
         this.getChildren().addAll(
-                powerOnButton,
-                powerOffButton,
-                resetButton,
-                shutdownButton);
+                createButton(playIcon, POWER_ON),
+                createButton(stopIcon, POWER_OFF),
+                createButton(pauseIcon, RESET),
+                createButton(exclamationIcon, SHUTDOWN));  
     }
 
     private void doCommand(CommandType command) 
@@ -133,8 +108,8 @@ public class OperationButtonBox extends HBox
         } 
         catch (ToolsUnavailable ex)
         {
-            DialogFactory.showSimpleDialog("Cannot complete operation " +
-                    "because VMware\n Tools is not running in this virtual machine.", 
+            DialogFactory.showSimpleDialog("Cannot complete operation because" +
+                    " VMware Tools is not running in this virtual machine.", 
                     "Error", 
                     getWindow());
         } 
@@ -145,7 +120,8 @@ public class OperationButtonBox extends HBox
                 /* Seems remote ESXi server doesn't accept command via VI API
                  * try to run command via SSH
                  */
-                logger.finer("Get RestrictedVersion from ESXi. Try command via SSH.");
+                logger.finer("Get RestrictedVersion from ESXi. " +
+                        "Try command via SSH.");
                 server.runCommandViaSsh(command, vm);
             } 
             catch (RecieveErrorMessageException ex2)
@@ -204,6 +180,43 @@ public class OperationButtonBox extends HBox
                 new Image("com/cafeform/esxi/esximonitor/control_pause_blue.png"));
         exclamationIcon = new ImageView(
                 new Image("com/cafeform/esxi/esximonitor/exclamation.png"));
+        blankIcon = new ImageView(
+                new Image("com/cafeform/esxi/esximonitor/control_blank.png"));
+    }
+    
+    private Button createButton (
+            ImageView icon, 
+            final CommandType command)
+    {
+        final Button button;
+        if ((poweredOn && POWER_ON.equals(command)) ||
+                (!poweredOn && ! POWER_ON.equals(command)))
+        {
+            button = new Button("", blankIcon);            
+            button.setDisable(true);
+        }
+        else 
+        {
+            button = new Button("", icon);
+            button.setDisable(false);
+        }
+        
+        // set tool tip need to berun on JavaFX application thread.
+        Platform.runLater(new Runnable()
+        {
+
+            @Override
+            public void run()
+            {
+                button.setTooltip(new Tooltip(command.toString()));                
+            }
+        });
+
+
+        button.addEventHandler(
+                MouseEvent.MOUSE_CLICKED,                        
+                new ButtonEventHandler(command));
+        return button;
     }
     
     private class ButtonEventHandler implements EventHandler<MouseEvent>

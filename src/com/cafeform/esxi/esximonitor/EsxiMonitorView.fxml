@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.web.*?>
 
-<BorderPane minHeight="-1.0" minWidth="-1.0" prefHeight="-1.0" prefWidth="624.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2" fx:controller="com.cafeform.esxi.esximonitor.EsxiMonitorViewController">
+<BorderPane minHeight="-1.0" minWidth="-1.0" prefHeight="400.0" prefWidth="624.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2" fx:controller="com.cafeform.esxi.esximonitor.EsxiMonitorViewController">
   <bottom>
     <BorderPane prefHeight="-1.0" prefWidth="200.0" BorderPane.alignment="BOTTOM_CENTER">
       <left>
@@ -28,7 +28,7 @@
       <children>
         <HBox alignment="CENTER" prefHeight="-1.0" prefWidth="-1.0" spacing="10.0">
           <children>
-            <ChoiceBox fx:id="serverComboBox">
+            <ChoiceBox id="serverComboBox" fx:id="serverChoiceBox">
               <items>
                 <FXCollections fx:factory="observableArrayList">
                   <String fx:value="アイテム1" />
@@ -45,9 +45,9 @@
             </Button>
           </children>
         </HBox>
-        <TableView fx:id="table" prefHeight="-1.0" prefWidth="-1.0">
+        <TableView fx:id="table" cache="true" cacheHint="DEFAULT" disable="false" editable="false" focusTraversable="true" mouseTransparent="false" pickOnBounds="false" prefHeight="-1.0" prefWidth="-1.0" tableMenuButtonVisible="false">
           <columns>
-            <TableColumn minWidth="10.0" prefWidth="50.0" text="Power" fx:id="statusColumn" />
+            <TableColumn minWidth="10.0" prefWidth="50.0" style="align: center" text="Power" fx:id="statusColumn" />
             <TableColumn maxWidth="5000.0" minWidth="10.0" prefWidth="150.0" text="Operation" fx:id="buttonColumn" />
             <TableColumn prefWidth="100.0" text="VM Name" fx:id="vmNameColumn" />
             <TableColumn maxWidth="5000.0" minWidth="10.0" prefWidth="100.0" text="Server" fx:id="serverColumn" />

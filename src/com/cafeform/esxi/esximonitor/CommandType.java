@@ -3,7 +3,7 @@ package com.cafeform.esxi.esximonitor;
 public enum CommandType 
 {
     POWER_OFF("power off"),
-    POWER_ON("Power on"),
+    POWER_ON("power on"),
     RESET("reset"),
     SHUTDOWN("shutdown");
     

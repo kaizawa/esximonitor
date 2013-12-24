@@ -22,6 +22,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import javax.swing.Icon;
 
 /**
@@ -89,24 +90,7 @@ public class ServerListViewController implements Initializable
         
         try
         {
-            FXMLLoader loader = 
-                    new FXMLLoader(getClass().getResource("EditServerView.fxml"));
-            loader.load();
-            Parent root = loader.getRoot();
-            EditServerViewController controller = loader.getController();
-            controller.setManager(manager);
-            controller.setButtonText("Add");
-
-            Scene scene = new Scene(root);
-            Stage newServerWindows = new Stage(StageStyle.UTILITY);
-            newServerWindows.setScene(scene);
-            // Set parent window
-            newServerWindows.initOwner(serverListTable.getScene().getWindow());
-            // Enable modal window
-            newServerWindows.initModality(Modality.WINDOW_MODAL);
-            newServerWindows.setResizable(false);
-            newServerWindows.setTitle("Add New Server");
-            newServerWindows.showAndWait(); 
+            createEditServerWindow(manager, null, getWindow()); 
         } 
         catch (IOException ex)
         {
@@ -116,15 +100,59 @@ public class ServerListViewController implements Initializable
         }
         updateServerList(manager);
     }
+
+    public static void createEditServerWindow (
+            ServerManager manager,
+            Server server,
+            Window parent) throws IOException
+    {
+        FXMLLoader loader =
+                new FXMLLoader(ServerListViewController.class.
+                        getResource("EditServerView.fxml"));
+        loader.load();
+        Parent root = loader.getRoot();
+        EditServerViewController controller = loader.getController();
+        controller.setManager(manager);
+        
+        Scene scene = new Scene(root);
+        Stage editServerWindow = new Stage(StageStyle.UTILITY);
+        editServerWindow.setScene(scene);
+        if(null != parent)
+        {
+            // Set parent window            
+            editServerWindow.initOwner(parent);                        
+            // Enable modal window            
+            editServerWindow.initModality(Modality.WINDOW_MODAL);
+        }
+        editServerWindow.setResizable(false);
+        if (null == server)
+        {
+            controller.setButtonText("Add");
+            editServerWindow.setTitle("Add Server");        
+        }
+        else 
+        {
+            controller.setServer(server);
+            controller.setButtonText("Save");        
+            editServerWindow.setTitle("Modify Server");            
+        }
+
+        editServerWindow.showAndWait();
+    }
     
     @FXML
     private void handleOkButton(ActionEvent event)
     {
-        serverListTable.getScene().getWindow().hide();
+        getWindow().hide();
     }
     
     public ServerManager getServerManager()
     {
         return manager;
+    }
+
+    private Window getWindow()
+    {
+        return serverListTable.getScene().getWindow();
     }
 }

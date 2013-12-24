@@ -1,6 +1,6 @@
 package com.cafeform.esxi.esximonitor;
 
-import java.util.List;
+import javafx.collections.ObservableList;
 
 public interface ServerManager 
 {
@@ -21,7 +21,7 @@ public interface ServerManager
      * Return List of ESXi host info stored in preferences.
      * @return list of esxi host
      */
-    public List<Server> getServerList();
+    public ObservableList<Server> getServerList();
 
     public Server getServerByHostname(String hostname);
 
@@ -32,4 +32,5 @@ public interface ServerManager
     public void removeServerByHostname(String hostname);
 
     public void editServer(Server server, String username, String password);
+    
 }

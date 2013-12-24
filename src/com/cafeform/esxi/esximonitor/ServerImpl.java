@@ -256,4 +256,10 @@ public class ServerImpl implements Server
         }
         return managedEntryArray;
     }
+    
+    @Override
+    public String toString ()
+    {
+        return hostname;
+    }
 }

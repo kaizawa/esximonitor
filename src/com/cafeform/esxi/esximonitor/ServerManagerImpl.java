@@ -6,11 +6,18 @@
 package com.cafeform.esxi.esximonitor;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import javafx.beans.InvalidationListener;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 
 /**
  *
@@ -20,7 +27,7 @@ public class ServerManagerImpl implements ServerManager
 {
     public static final Logger logger = Logger.getLogger(ServerManager.class.getName());
     private Server defaultServer = null;
-    private List<Server> serverList = null;
+    private ObservableList<Server> serverList = null;
 
     @Override
     public Server getDefaultServer() throws NoDefaultServerException
@@ -92,7 +99,7 @@ public class ServerManagerImpl implements ServerManager
      *
      */
     @Override
-    public List<Server> getServerList()
+    public ObservableList<Server> getServerList()
     {
         /* 
          * If this is first time to get server list, get list from Preferences.
@@ -100,7 +107,7 @@ public class ServerManagerImpl implements ServerManager
          */
         if (null == serverList)
         {
-            serverList = new ArrayList<>();
+            serverList = FXCollections.observableArrayList();
             try
             {
                 logger.finer("getServers called");
@@ -164,5 +171,5 @@ public class ServerManagerImpl implements ServerManager
         server.setUsername(username);
         server.setPassword(password);
         Prefs.addServer(server.getHostname(), username, password);
-    }
+    } 
 }
