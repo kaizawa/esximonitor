@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -36,7 +37,8 @@ public class ServerImpl implements Server
     
     public ServerImpl(){}
     
-    public ServerImpl(String hostname, String username, String password) {
+    public ServerImpl(String hostname, String username, String password) 
+    {
         this.hostname = hostname;
         this.username = username;
         this.password = password;
@@ -45,49 +47,63 @@ public class ServerImpl implements Server
     /**
      * @return the hostname
      */
-    public String getHostname() {
+    @Override
+    public String getHostname() 
+    {
         return hostname;
     }
 
     /**
      * @param hostname the hostname to set
      */
-    public void setHostname(String hostname) {
+    @Override
+    public void setHostname(String hostname) 
+    {
         this.hostname = hostname;
     }
 
     /**
      * @return the username
      */
-    public String getUsername() {
+    @Override
+    public String getUsername() 
+    {
         return username;
     }
 
     /**
      * @param username the username to set
      */
-    public void setUsername(String username) {
+    @Override
+    public void setUsername(String username)
+    {
         this.username = username;
     }
 
     /**
      * @return the password
      */
-    public String getPassword() {
+    @Override
+    public String getPassword() 
+    {
         return password;
     }
 
     /**
      * @param password the password to set
      */
-    public void setPassword(String password) {
+    @Override
+    public void setPassword(String password) 
+    {
         this.password = password;
     }
 
     /**
      * Reset current connection with this server
      */
-    public void resetServer() {
+    @Override
+    public void resetServer() 
+    {
         try {
             ServiceInstance svcInst = getServiceInstance();
             if (null != svcInst) {
@@ -95,9 +111,7 @@ public class ServerImpl implements Server
             }
             setServiceInstance(null);
             setRootFolder(null);
-        } catch (MalformedURLException ex) {
-            logger.severe(ex.toString());
-        } catch (RemoteException ex) {
+        } catch (MalformedURLException | RemoteException ex) {
             logger.severe(ex.toString());
         }
     }
@@ -105,21 +119,25 @@ public class ServerImpl implements Server
     /**
      * @param aServiceInstance the serviceInstance to set
      */
-    private void setServiceInstance(ServiceInstance aServiceInstance) {
+    private void setServiceInstance(ServiceInstance aServiceInstance) 
+    {
         serviceInstance = aServiceInstance;
     }
 
     /**
      * @param aRootFolder the rootFolder to set
      */
-    private void setRootFolder(Folder aRootFolder) {
+    private void setRootFolder(Folder aRootFolder) 
+    {
         rootFolder = aRootFolder;
     }
 
     /**
      * @return the serviceInstance
      */
-    private ServiceInstance getServiceInstance() throws MalformedURLException, RemoteException {
+    private ServiceInstance getServiceInstance() 
+            throws MalformedURLException, RemoteException 
+    {
         if ("".equals(getHostname())) {
             logger.finer("getHostname returns null");
             return null;
@@ -127,7 +145,10 @@ public class ServerImpl implements Server
         
         if (serviceInstance == null) {
             logger.finer("serviceInstance is null");
-            serviceInstance = new ServiceInstance(new URL("https://" + getHostname() + "/sdk"), getUsername(), getPassword(), true);
+            serviceInstance = new ServiceInstance(
+                    new URL("https://" + getHostname() + "/sdk"), 
+                    getUsername(), 
+                    getPassword(), true);
         }
         return serviceInstance;
     }
@@ -135,14 +156,18 @@ public class ServerImpl implements Server
     /**
      * @return the rootFolder
      */
-    private Folder getRootFolder() throws RemoteException, MalformedURLException {
+    private Folder getRootFolder() throws RemoteException, MalformedURLException 
+    {
         if (rootFolder == null) {
             rootFolder = getServiceInstance().getRootFolder();
         }
         return rootFolder;
     }    
     
-    public void runCommandViaSsh(String actionCommand, VirtualMachine vm) throws IOException {
+    @Override
+    public void runCommandViaSsh(CommandType command, VirtualMachine vm) 
+            throws IOException 
+    {
         logger.finer("runCommandViaSsh called");
         ESXiConnection conn = new ESXiConnection(hostname, username, password);
         Vmsvc vmsvc = conn.getVmsvc();
@@ -151,53 +176,69 @@ public class ServerImpl implements Server
         for (VM ssh_vm : vmsvc.getAllvms()) {
             if (ssh_vm.getName().equals(vm.getName())) {
                 vmid = ssh_vm.getVmid();
-            }
+            }               
         }
         
-        if ("poweroff".equals(actionCommand)) {
-            vmsvc.powerOff(vmid);
-        } else if ("poweron".equals(actionCommand)) {
-            vmsvc.powerOn(vmid);
-        } else if ("reset".equals(actionCommand)) {
-            vmsvc.powerReset(vmid);
-        } else if ("shutdown".equals(actionCommand)) {
-            vmsvc.powerShutdown(vmid);
+        switch(command)
+            {
+                case POWER_OFF:
+                    vmsvc.powerOff(vmid);
+                    break;
+                case POWER_ON:
+                    vmsvc.powerOn(vmid);
+                    break;
+                case RESET:
+                    vmsvc.powerReset(vmid);
+                    break;
+                case SHUTDOWN:
+                    vmsvc.powerShutdown(vmid);
+                    break;
         }
+
         logger.finer(vmsvc.powerGetState(vmid));
-        logger.finer("Submit " + actionCommand + " via SSH succeeded");
+        logger.log(Level.FINER, "Submit {0} via SSH succeeded", command);
     }
     
-    public ManagedEntity[] getVirtualMachineArray (){
+    @Override
+    public ManagedEntity[] getVirtualMachineArray ()
+    {
         return getManagedEntryArray("VirtualMachine");
     }
     
-    public ManagedEntity[] getManagedEntryArray(String managedEntryName) {
+    @Override
+    public ManagedEntity[] getManagedEntryArray(String managedEntryName) 
+    {
         boolean retried = false; // retry once if error happen
         ManagedEntity[] managedEntryArray = new ManagedEntity[0];
 
         while (true) {
             try {
-                logger.fine("RootFolder: " + getRootFolder().getName());
-                managedEntryArray = new InventoryNavigator(getRootFolder()).searchManagedEntities(managedEntryName);
+                logger.log(Level.FINE, "RootFolder: {0}", getRootFolder().getName());
+                managedEntryArray = new InventoryNavigator(getRootFolder()).
+                        searchManagedEntities(managedEntryName);
                 if (managedEntryArray == null || managedEntryArray.length == 0) {
                     resetServer();
                     if (retried) {
-                        logger.fine("no " + managedEntryName + " exist");
+                        logger.log(Level.FINE, "no {0} exist", managedEntryName);
                         break;
                     }
-                    logger.fine("no " + managedEntryName + " returned. retrying...");
+                    logger.log(Level.FINE, "no {0} returned. retrying...", 
+                            managedEntryName);
                     retried = true;
                     continue;
                 }
-                logger.finer("total " + managedEntryArray.length +  " " + managedEntryName + " found ");
+                logger.log(Level.FINER, "total {0} {1} found ", 
+                        new Object[]{managedEntryArray.length, managedEntryName});
                 break;
             } catch (InvalidLogin ex) {
-                logger.finer("Login to " + getHostname() + " failed ");
+                logger.log(Level.FINER, "Login to {0} failed ", getHostname());
                 logger.severe(ex.toString());
                 resetServer();
                 break;
             } catch (RemoteException ex) {
-                logger.finer("RemoteException happen when connecting to " + getHostname());
+                logger.log(Level.FINER, 
+                        "RemoteException happen when connecting to {0}", 
+                        getHostname());
                 logger.severe(ex.toString());
                 resetServer();
                 break;
@@ -205,8 +246,9 @@ public class ServerImpl implements Server
                 logger.fine("retrying to conect to ESXi host...");
                 resetServer();
                 if (retried) {
-                    ex.printStackTrace();
-                    logger.severe("Cannot get  " + managedEntryName + " list");
+                    logger.log(Level.SEVERE, 
+                            "Cannot get  {0} list", 
+                            managedEntryName);
                     break;
                 }
                 retried = true;

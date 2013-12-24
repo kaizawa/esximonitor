@@ -1,11 +1,8 @@
-/*
- * The code is copied from :
- * http://javainthebox.net/publication/20130824JJUGJavaFXHoL/text/20130824JavaFXHoL02.html
- */
 package com.cafeform.esxi.esximonitor;
 
 import com.vmware.vim25.mo.ManagedEntity;
 import com.vmware.vim25.mo.VirtualMachine;
+import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -13,17 +10,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javax.swing.Icon;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 /**
  *
@@ -31,31 +35,26 @@ import javax.swing.Icon;
  */
 public class EsxiMonitorViewController implements Initializable
 {
-
     static String version = "v0.3.0";
-    public static final Logger logger = Logger.getLogger(Main.class.getName());
+    public static final Logger logger = Logger.getLogger(EsxiMonitorViewController.class.getName());
     final public static int iconSize = 15;
-    static Icon lightbulb = null;
-    static Icon lightbulb_off = null;
     private final ServerManager manager = new ServerManagerImpl();
-    private final ObservableList<VirtualMachineEntry> vmEntryList
-            = FXCollections.observableArrayList();
     private final ExecutorService executor
             = Executors.newSingleThreadScheduledExecutor();
     private boolean allServerMode = false;
 
     @FXML
-    private TableView<VirtualMachineEntry> table;
+    private TableView<VirtualMachineRowEntry> table;
     @FXML
-    private TableColumn<VirtualMachineEntry, String> statusColumn;
+    private TableColumn<VirtualMachineRowEntry, Label> statusColumn;
     @FXML
-    private TableColumn<VirtualMachineEntry, String> buttonColumn;
+    private TableColumn<VirtualMachineRowEntry, String> buttonColumn;
     @FXML
-    private TableColumn<VirtualMachineEntry, String> serverColumn;
+    private TableColumn<VirtualMachineRowEntry, String> serverColumn;
     @FXML
-    private TableColumn<VirtualMachineEntry, String> osTypeColumn;
+    private TableColumn<VirtualMachineRowEntry, String> osTypeColumn;
     @FXML
-    private TableColumn<VirtualMachineEntry, String> vmNameColumn;
+    private TableColumn<VirtualMachineRowEntry, String> vmNameColumn;
     @FXML
     private ProgressBar progressBar;
     @FXML
@@ -68,7 +67,8 @@ public class EsxiMonitorViewController implements Initializable
         {
             // Check if defautl server is set
             manager.getDefaultServer();
-        } catch (NoDefaultServerException ex)
+        } 
+        catch (NoDefaultServerException ex)
         {
             // no default server set. must be first run.
             //TODO: hoge
@@ -82,25 +82,28 @@ public class EsxiMonitorViewController implements Initializable
         serverColumn.setCellValueFactory(new PropertyValueFactory("serverName"));
         vmNameColumn.setCellValueFactory(new PropertyValueFactory("vmName")); 
         osTypeColumn.setCellValueFactory(new PropertyValueFactory("osType"));
-
+        buttonColumn.setCellValueFactory(new PropertyValueFactory("buttonBox"));
         updateVmListPanel();
     }
 
     /**
      * Update Main window's virtual machine list of defautl server.
      */
-    protected void updateVmListPanel()
+    public void updateVmListPanel()
     {
         logger.finer("submitting task");
         final List<Server> serverList = manager.getServerList();
         logger.log(Level.FINER, "{0} server(s) registerd", serverList.size());
         progressBar.setProgress(-1.0f);
-        executor.submit(new Task<ObservableList<VirtualMachineEntry>>()
+        final EsxiMonitorViewController controller = this;
+        
+        // Process retrieving VM entries in separate thread
+        executor.submit(new Task<ObservableList<VirtualMachineRowEntry>>()
         {
             @Override
-            protected ObservableList<VirtualMachineEntry> call() throws Exception
+            protected ObservableList<VirtualMachineRowEntry> call() throws Exception
             {
-                ObservableList<VirtualMachineEntry> foundVmEntryList
+                ObservableList<VirtualMachineRowEntry> foundVmEntryList
                         = FXCollections.observableArrayList();
                 logger.fine("update task is running");
                 for (Server server : serverList)
@@ -122,8 +125,8 @@ public class EsxiMonitorViewController implements Initializable
                     for (ManagedEntity managedEntry : managedEntityArray)
                     {
                         VirtualMachine vm = (VirtualMachine) managedEntry;
-                        VirtualMachineEntry vmEntry
-                                = new VirtualMachineEntry(vm, server);
+                        VirtualMachineRowEntry vmEntry
+                                = new VirtualMachineRowEntry(vm, server, controller);
                         foundVmEntryList.add(vmEntry);
                     }
                 }
@@ -136,11 +139,100 @@ public class EsxiMonitorViewController implements Initializable
             protected void succeeded()
             {
                 super.succeeded();
-                ObservableList<VirtualMachineEntry> foundVmEntryList = getValue();
+                // Collect vm entries from all servers which were retrieved
+                // by separate threads
+                ObservableList<VirtualMachineRowEntry> foundVmEntryList = getValue();
                 table.setItems(foundVmEntryList);
                 statusLabel.setText("");
                 progressBar.setProgress(0f);
             }
         });
+    }
+    
+    @FXML
+    private void uandleUpdateButton (ActionEvent event) {
+        updateVmListPanel();
+    }
+    
+    @FXML
+    private void handleExit (ActionEvent event)
+    {
+        Platform.exit();
+    }
+    
+    /**
+     * Handle Edit ESXi Host event
+     * @param event 
+     */
+    @FXML 
+    private void handleEditHosts(ActionEvent event)
+    {
+        try
+        {
+            FXMLLoader loader = 
+                    new FXMLLoader(getClass().
+                            getResource("ServerListView.fxml"));
+            loader.load();
+            Parent root = loader.getRoot();
+            ServerListViewController controller = loader.getController();
+            controller.updateServerList(manager);
+            Scene scene = new Scene(root);
+            Stage serverListWindows = new Stage(StageStyle.UTILITY);
+            serverListWindows.setScene(scene);
+            // Set parent window
+            serverListWindows.initOwner(progressBar.getScene().getWindow());
+            // Enable modal window
+            serverListWindows.initModality(Modality.WINDOW_MODAL);
+            serverListWindows.setResizable(false);
+            serverListWindows.setTitle("ESXi Server List");
+            serverListWindows.showAndWait(); 
+        } 
+        catch (IOException ex)
+        {
+            Logger.getLogger(
+                    EsxiMonitorViewController.
+                            class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    @FXML
+    private void handleAbout ()
+    {
+        try
+        {
+            FXMLLoader loader = 
+                    new FXMLLoader(getClass().
+                            getResource("AboutView.fxml"));
+            loader.load();
+            Parent root = loader.getRoot();
+            AboutViewController controller = loader.getController();
+            controller.setVersion(version);
+            Scene scene = new Scene(root);
+            Stage serverListWindows = new Stage(StageStyle.UTILITY);
+            serverListWindows.setScene(scene);
+            // Set parent window
+            serverListWindows.initOwner(progressBar.getScene().getWindow());
+            // Enable modal window
+            serverListWindows.initModality(Modality.WINDOW_MODAL);
+            serverListWindows.setResizable(false);
+            serverListWindows.setTitle("About ESXiMonitor");
+            serverListWindows.showAndWait(); 
+        } 
+        catch (IOException ex)
+        {
+            Logger.getLogger(
+                    EsxiMonitorViewController.
+                            class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public ProgressBar getProgressBar () 
+    {
+        return progressBar;
+    }
+    
+    public Label getStatusLabel () 
+    {
+        return statusLabel;
     }
 }

@@ -6,6 +6,7 @@
 
 package com.cafeform.esxi.esximonitor;
 
+import java.awt.MenuBar;
 import java.io.IOException;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -24,7 +25,7 @@ public class EsxiMonitor extends Application {
     public void start(Stage stage) throws IOException {
         Parent root = FXMLLoader.load(getClass().getResource("EsxiMonitorView.fxml"));
         
-        Scene scene = new Scene(root);        
+        Scene scene = new Scene(root);               
         stage.setScene(scene);
         stage.show();
     }

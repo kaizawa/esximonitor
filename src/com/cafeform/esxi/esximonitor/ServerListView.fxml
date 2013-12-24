@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.collections.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.*?>
+
+<BorderPane minHeight="-1.0" minWidth="-1.0" prefHeight="-1.0" prefWidth="324.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2" fx:controller="com.cafeform.esxi.esximonitor.ServerListViewController">
+  <bottom>
+    <HBox alignment="CENTER_RIGHT" prefHeight="-1.0" prefWidth="-1.0" spacing="10.0">
+      <children>
+        <Button mnemonicParsing="false" onAction="#handleNewButton" text="New" />
+        <Button cancelButton="true" defaultButton="true" mnemonicParsing="false" onAction="#handleOkButton" text="OK" />
+      </children>
+      <padding>
+        <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+      </padding>
+    </HBox>
+  </bottom>
+  <center>
+    <TableView fx:id="serverListTable" prefHeight="200.0" prefWidth="200.0">
+      <columns>
+        <TableColumn prefWidth="60.0" text="Edit" fx:id="editButtonColumn" />
+        <TableColumn prefWidth="60.0" text="Delete" fx:id="deleteButtonColumn" />
+        <TableColumn prefWidth="180.0" text="ESXi Host Name" fx:id="hostNameColumn" />
+      </columns>
+    </TableView>
+  </center>
+  <padding>
+    <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+  </padding>
+</BorderPane>

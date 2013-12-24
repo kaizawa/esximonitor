@@ -1,6 +1,7 @@
 package com.cafeform.esxi.esximonitor;
 
 import com.cafeform.esxi.RecieveErrorMessageException;
+import static com.cafeform.esxi.esximonitor.CommandType.*;
 import com.vmware.vim25.*;
 import com.vmware.vim25.mo.Task;
 import com.vmware.vim25.mo.VirtualMachine;
@@ -185,7 +186,21 @@ public class OperationButtonPanel extends JPanel implements ActionListener {
                  * try to run command via SSH
                  */
                 logger.finer("Get RestrictedVersion from ESXi. Try command via SSH.");
-                server.runCommandViaSsh(command, vm);
+                switch(command)
+                {
+                    case "poweroff":
+                        server.runCommandViaSsh(POWER_OFF, vm);
+                        break;
+                    case "poweron":
+                        server.runCommandViaSsh(POWER_ON, vm);
+                        break;
+                    case "reset":
+                        server.runCommandViaSsh(RESET, vm);                        
+                        break;
+                    case "shutdown":
+                        server.runCommandViaSsh(SHUTDOWN, vm);                        
+                        break;
+                }
             } catch (RecieveErrorMessageException ex2) {
                 JOptionPane.showMessageDialog(esximon, ex2.getMessage(), "Error", JOptionPane.WARNING_MESSAGE);
             } catch (IOException ex3) {

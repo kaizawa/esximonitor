@@ -137,7 +137,10 @@ public class ServerManagerImpl implements ServerManager
     @Override
     public synchronized void addServer(Server server)
     {
-        Prefs.addServer(server.getHostname(), server.getUsername(), server.getPassword());
+        Prefs.addServer(
+                server.getHostname(), 
+                server.getUsername(), 
+                server.getPassword());
         getServerList().add(server);
         logger.log(Level.FINER, "{0} is added", server.getHostname());
     }

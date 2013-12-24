@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.collections.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.*?>
+
+<BorderPane minHeight="-1.0" minWidth="-1.0" prefHeight="-1.0" prefWidth="250.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2" fx:controller="com.cafeform.esxi.esximonitor.DialogViewController">
+  <bottom>
+    <HBox alignment="CENTER_RIGHT" prefHeight="-1.0" prefWidth="-1.0" spacing="10.0">
+      <children>
+        <Button fx:id="okButton" mnemonicParsing="false" onAction="#handleOk" text="OK" />
+        <Button fx:id="cancelButton" defaultButton="true" mnemonicParsing="false" onAction="#handleCancel" text="Cancel" />
+      </children>
+      <padding>
+        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+      </padding>
+    </HBox>
+  </bottom>
+  <center>
+    <Label fx:id="message" text="message" textAlignment="JUSTIFY" textOverrun="CLIP" wrapText="true">
+      <BorderPane.margin>
+        <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
+      </BorderPane.margin>
+    </Label>
+  </center>
+</BorderPane>

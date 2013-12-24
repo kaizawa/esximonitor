@@ -1,0 +1,124 @@
+package com.cafeform.esxi.esximonitor;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Control;
+import javafx.scene.input.MouseEvent;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+
+/**
+ * Stands for ESXi host in ESXi server host list window
+ */
+public class ServerRowEntry
+{
+    // Note: 
+    // Since there's no no need to observe these values dinamically,
+    // no xxxProperty method is created here. (I mean, omitted)
+    // PropertyValueFactory class in ServerListViewController will 
+    // take care of this situaion and handle these properties as static values.
+    private Button deleteButton;
+    private String hostName;
+    private Button editButton;
+
+    public ServerRowEntry(
+            final Server server,
+            final ServerListViewController controller,
+            final Control parent)
+    {
+        editButton = new Button("Edit");
+        deleteButton = new Button("Del");
+        hostName = server.getHostname();
+        final ServerManager manager = controller.getServerManager();
+        
+        deleteButton.addEventHandler(
+                MouseEvent.MOUSE_CLICKED, 
+                new EventHandler<MouseEvent>()
+                {
+                    @Override
+                    public void handle(MouseEvent t)
+                    {
+                        manager.removeServer(server);
+                        controller.updateServerList(manager);                        
+                    }
+                });
+
+        editButton.addEventHandler(
+                MouseEvent.MOUSE_CLICKED,
+                new EventHandler<MouseEvent>()
+                {
+                    @Override
+                    public void handle(MouseEvent t)
+                    {
+                        try
+                        {
+                            FXMLLoader loader
+                            = new FXMLLoader(getClass().
+                                    getResource("EditServerView.fxml"));
+                            loader.load();
+                            Parent root = loader.getRoot();
+                            EditServerViewController controller = 
+                                    loader.getController();
+                            controller.setServer(server);
+                            controller.setManager(manager);
+
+                            Scene scene = new Scene(root);
+                            Stage newServerWindows = new Stage(StageStyle.UTILITY);
+                            newServerWindows.setScene(scene);
+                            // Set parent window
+                            newServerWindows.initOwner(parent.getScene().getWindow());
+                            // Enable modal window
+                            newServerWindows.initModality(Modality.WINDOW_MODAL);
+                            newServerWindows.setResizable(false);
+                            newServerWindows.setTitle("Modify Server");
+                            newServerWindows.showAndWait();
+                        } 
+                        catch (IOException ex)
+                        {
+                            Logger.getLogger(
+                                    EsxiMonitorViewController.class.getName()).
+                                    log(Level.SEVERE, null, ex);
+                        }
+                    }
+                });
+    }
+
+    public Button getEditButton()
+    {
+        return editButton;
+    }
+
+    public void setEditButton(Button editButton)
+    {
+        this.editButton = editButton;
+    }
+
+    public Button getDeleteButton()
+    {
+        return deleteButton;
+    }
+
+    public void setDeleteButton(Button deleteButton)
+    {
+        this.deleteButton = deleteButton;
+    }
+
+
+    public String getHostName()
+    {
+        return hostName;
+    }
+
+    public void setHostName(String hostName)
+    {
+        this.hostName = hostName;
+    }
+
+}

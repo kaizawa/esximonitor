@@ -6,8 +6,8 @@ import java.io.IOException;
 /**
  * Interface which represents ESXi host.
  */
-public interface Server {
-
+public interface Server 
+{
     /**
      * @return the hostname
      */
@@ -44,7 +44,7 @@ public interface Server {
      */
     public void resetServer();
     
-    public void runCommandViaSsh(String actionCommand, VirtualMachine vm) 
+    public void runCommandViaSsh(CommandType command, VirtualMachine vm) 
             throws IOException;
 
     public ManagedEntity[] getVirtualMachineArray ();
