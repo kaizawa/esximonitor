@@ -3,7 +3,9 @@ package com.cafeform.esxi.esximonitor;
 import com.vmware.vim25.mo.ManagedEntity;
 import com.vmware.vim25.mo.VirtualMachine;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.rmi.RemoteException;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
@@ -35,8 +37,7 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 
 /**
- *
- * @author kaizawa
+ * JavaFX controller for Main windows 
  */
 public class EsxiMonitorViewController implements Initializable
 {
@@ -72,14 +73,10 @@ public class EsxiMonitorViewController implements Initializable
     @Override
     public void initialize(URL url, ResourceBundle rb)
     {
-        try
+        // Check if defautl server is set
+        if(null == manager.getDefaultServer())
         {
-            // Check if defautl server is set
-            manager.getDefaultServer();
-        } 
-        catch (NoDefaultServerException ex)
-        {
-            // no default server set. must be first run.
+            // No default server set. must be first run.
             logger.finer("server is not set");
             try
             {
@@ -94,38 +91,54 @@ public class EsxiMonitorViewController implements Initializable
                                 exi.getMessage(), 
                         "Error", 
                         getWindow());
-                Platform.exit();
             }
         }
+        // Associate columns with corresponding property of 
+        // VirtualMachineRowEntry class.
         statusColumn.setCellValueFactory(new PropertyValueFactory("status"));
         serverColumn.setCellValueFactory(new PropertyValueFactory("serverName"));
         vmNameColumn.setCellValueFactory(new PropertyValueFactory("vmName")); 
         osTypeColumn.setCellValueFactory(new PropertyValueFactory("osType"));
         buttonColumn.setCellValueFactory(new PropertyValueFactory("buttonBox"));
 
+        // Set server list and set default server to Choice Box
         serverChoiceBox.setItems(manager.getServerList());
         serverChoiceBox.setValue(manager.getDefaultServer());
 
-        serverChoiceBox.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Server>()
-        {
-            @Override
-            public void changed(
-                    ObservableValue<? extends Server> ov, 
-                    Server oldServer, 
-                    Server newServer)
-            {
-                if (!Platform.isFxApplicationThread()){
-                    DialogFactory.showSimpleDialog("This is not JavaFX " +
-                            "Application Thread", "Warrning", getWindow());                
-                }
-                if (null != newServer )
+        // Set listener for Choice Box
+        serverChoiceBox.getSelectionModel().selectedItemProperty().addListener(
+                new ChangeListener<Server>()
                 {
-                    manager.setDefaultServer(newServer);
-                    updateVmListPanel();
-                }
-            }
-        });
+                    @Override
+                    public void changed(
+                            ObservableValue<? extends Server> ov, 
+                            Server oldServer, 
+                            Server newServer)
+                    {
+                        if (!Platform.isFxApplicationThread()){
+                            DialogFactory.showSimpleDialog("This is not JavaFX " +
+                                    "Application Thread", "Warrning", getWindow());                
+                        }
+                        if (null != newServer )
+                        {
+                            try
+                            {
+                                manager.setDefaultServer(newServer);
+                            } 
+                            catch (MalformedURLException | RemoteException ex)
+                            {
+                                logger.log(Level.SEVERE, 
+                                        "Cannot set default server", ex);
+                                DialogFactory.showSimpleDialog(
+                                        "Cannot set default server", 
+                                        "Error", getWindow());
+                            }
+                            updateVmListPanel();
+                        }
+                    }
+                });
         
+        // Set listener for All Server Check Box
         showAllCheckBox.selectedProperty().addListener(new ChangeListener<Boolean>()
         {
             @Override
@@ -136,12 +149,13 @@ public class EsxiMonitorViewController implements Initializable
                 updateVmListPanel();
             }
         });
-        
+
+        // Update VM list 
         updateVmListPanel();
     }
 
     /**
-     * Update Main window's virtual machine list of defautl server.
+     * Update Main window's virtual machine list
      */
     public void updateVmListPanel()
     {
@@ -162,6 +176,7 @@ public class EsxiMonitorViewController implements Initializable
                 logger.fine("update task is running");
                 for (Server server : serverList)
                 {
+                    // If "All Server" mode, show all VMs of all server
                     if (!allServerMode && server
                             != manager.getDefaultServer())
                     {
@@ -216,7 +231,8 @@ public class EsxiMonitorViewController implements Initializable
     }
     
     /**
-     * Handle Edit ESXi Host event
+     * Handle Edit ESXi Host event. 
+     * Create ESXi Server List window
      * @param event 
      */
     @FXML 
@@ -250,6 +266,9 @@ public class EsxiMonitorViewController implements Initializable
         }
     }
     
+    /**
+     * Create Help->About window
+     */
     @FXML
     private void handleAbout ()
     {

@@ -8,11 +8,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.rmi.RemoteException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.GroupLayout.Alignment;
@@ -25,8 +28,9 @@ import javax.swing.event.HyperlinkListener;
 /**
  * ESXiMonitor <br> Simple Monitor of remote ESXi host. It enables to monitor
  * power status of each virtual macnine running o ESXi host.
- *
+ * @deprecated No longer used.
  */
+@Deprecated
 public class Main extends JFrame implements ActionListener, HyperlinkListener {
 
     static String version = "v0.2.4";
@@ -63,7 +67,9 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         }
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[]) 
+            throws MalformedURLException, RemoteException 
+    {
         if (args.length != 0) {
             printUsage();
             System.exit(1);
@@ -80,15 +86,14 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                 + " com.cafeform.esxi.esximonitor.Main");
     }
 
-    private void execute(String[] args) {
+    private void execute(String[] args) 
+            throws MalformedURLException, RemoteException 
+    {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        try {
-            /*
-             * Check if defautl server is set
-             */
-            manager.getDefaultServer();
-        } catch (NoDefaultServerException ex) {
+        // Check if defautl server is set
+        if (null == manager.getDefaultServer()) 
+        {
             /*
              * no default server set. must be first run.
              */
@@ -132,9 +137,8 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         List<Server> serverList = manager.getServerList();
         if (serverList.size() > 0) {
             Server defaultServer;
-            try {
-                defaultServer = manager.getDefaultServer();
-            } catch (NoDefaultServerException ex) {
+            if (null == (defaultServer = manager.getDefaultServer()))
+            {
                 return defaultServerPanel;
             }
             for (Server server : serverList) {
@@ -243,7 +247,17 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
                         }
                         
                         getStatusLabel().setText("Updating VM List of " + server.getHostname());
-                        ManagedEntity[] managedEntityArray = server.getVirtualMachineArray();
+                        ManagedEntity[] managedEntityArray = null;
+                        try
+                        {
+                            managedEntityArray = server.getVirtualMachineArray();
+                        } catch (RemoteException ex)
+                        {
+                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                        } catch (MalformedURLException ex)
+                        {
+                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                         logger.finer(managedEntityArray.length + " VM found on " + server.getHostname());
 
                         for (ManagedEntity managedEntry : managedEntityArray) {
@@ -357,7 +371,13 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         } else if ("comboBoxChanged".equals(cmd)) {
             JComboBox comboBox = (JComboBox) ae.getSource();
             String selectedHostname = (String) comboBox.getSelectedItem();
-            setDefaultServerByHostname(selectedHostname);
+            try
+            {
+                setDefaultServerByHostname(selectedHostname);
+            } catch (MalformedURLException | RemoteException ex)
+            {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }
             updateVMLIstPanel();
         } else if ("allServerChecked".equals(cmd)) {
             final boolean comboBoxEnabled;
@@ -387,7 +407,8 @@ public class Main extends JFrame implements ActionListener, HyperlinkListener {
         repaint();
     }
 
-    private void setDefaultServerByHostname(String hostname) {
+    private void setDefaultServerByHostname(String hostname) 
+            throws MalformedURLException, RemoteException {
         if (null != hostname) {
             logger.fine(hostname + " is selected.");
         } else {

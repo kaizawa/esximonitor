@@ -1,20 +1,23 @@
 package com.cafeform.esxi.esximonitor;
 
-import java.net.URL;
-import java.util.ResourceBundle;
+import java.net.MalformedURLException;
+import java.rmi.RemoteException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Window;
 
 /**
- *
+ * JavaFX Controller for ESXi Server Edit window
  */
-public class EditServerViewController implements Initializable
+public class EditServerViewController
 {
+    public static final Logger logger = 
+            Logger.getLogger(EditServerViewController.class.getName());
     @FXML
     private TextField username;
     @FXML
@@ -25,12 +28,6 @@ public class EditServerViewController implements Initializable
     private Server server;
     @FXML
     private Button editButton;
-
-    @Override
-    public void initialize(URL url, ResourceBundle rb)
-    {
-
-    }
     
     public void setManager (ServerManager manager)
     {
@@ -47,7 +44,7 @@ public class EditServerViewController implements Initializable
     }
     
     @FXML
-    private void handleEdit (ActionEvent event)
+    private void handleEdit (ActionEvent event) 
     {
         if (null == manager)
         {
@@ -57,15 +54,20 @@ public class EditServerViewController implements Initializable
         // Otherwise update existing Server object
         if (null == server)
         {
-            if (null == manager)
+
+                server = new ServerImpl(
+                        hostname.getText(),
+                        username.getText(),
+                        password.getText());
+            try {                
+                manager.addServer(server);
+            } 
+            catch (MalformedURLException | RemoteException ex) 
             {
-                throw new IllegalStateException("Manager is not set");
+                logger.log(Level.SEVERE, "Cannot add server", ex);
+                DialogFactory.showSimpleDialog("Cannot add server", "Error", 
+                        getWindow());
             }
-            server = new ServerImpl(
-                    hostname.getText(), 
-                    username.getText(), 
-                    password.getText());
-            manager.addServer(server);
         } 
         else 
         {

@@ -26,7 +26,7 @@ import javafx.stage.Window;
 import javax.swing.Icon;
 
 /**
- * JavaFX Controller class for ServerListView
+ * JavaFX Controller class for Server List window
  */
 public class ServerListViewController implements Initializable
 {

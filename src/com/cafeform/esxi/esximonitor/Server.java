@@ -2,6 +2,8 @@ package com.cafeform.esxi.esximonitor;
 
 import com.vmware.vim25.mo.*;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.rmi.RemoteException;
 
 /**
  * Interface which represents ESXi host.
@@ -41,13 +43,17 @@ public interface Server
 
     /**
      * Reset current connection with this server
+     * @throws java.net.MalformedURLException
+     * @throws java.rmi.RemoteException
      */
-    public void resetServer();
+    public void resetServer() throws MalformedURLException, RemoteException;
     
     public void runCommandViaSsh(CommandType command, VirtualMachine vm) 
             throws IOException;
 
-    public ManagedEntity[] getVirtualMachineArray ();
+    public ManagedEntity[] getVirtualMachineArray ()
+            throws RemoteException, MalformedURLException;
     
-    public ManagedEntity[] getManagedEntryArray(String managedEntryName);
+    public ManagedEntity[] getManagedEntryArray(String managedEntryName)
+            throws RemoteException, MalformedURLException;
 }

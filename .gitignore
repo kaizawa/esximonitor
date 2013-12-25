@@ -14,4 +14,5 @@ src/com/cafeform/esxi/esximonitor/.nfs*
 hs_err*
 esximonitor.html
 esximonitor.jnlp
-dist
+dist/*
+test

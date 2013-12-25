@@ -13,7 +13,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 
 /**
- *
+ * Stands for virtual machine row entry listed in main window.
  */
 public class VirtualMachineRowEntry
 {

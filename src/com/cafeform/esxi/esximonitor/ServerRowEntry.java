@@ -9,7 +9,7 @@ import javafx.scene.control.Control;
 import javafx.scene.input.MouseEvent;
 
 /**
- * Stands for ESXi host in ESXi server host list window
+ * Stands for row of ESXi host in server list window
  */
 public class ServerRowEntry
 {
@@ -60,10 +60,12 @@ public class ServerRowEntry
                         } 
                         catch (IOException ex)
                         {
-                            //TODO: show erro dialog
                             Logger.getLogger(
                                     EsxiMonitorViewController.class.getName()).
                                     log(Level.SEVERE, null, ex);
+                            DialogFactory.showSimpleDialog(
+                                    "Cannot create Server Edit Window\n" +
+                                            ex.getMessage(), "Error", null);
                         }
                     }
                 });

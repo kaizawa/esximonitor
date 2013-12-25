@@ -13,8 +13,9 @@ import javax.swing.border.LineBorder;
 /**
  * Dialog which show ESXi Server list.<br>
  * And it also allows to add new ESXi host.
- * 
+ * @deprecated this is swing version. no longer used.
  */
+@Deprecated
 public class ServerDialog extends JDialog implements ActionListener {
 
     static public Logger logger = Logger.getLogger(ServerDialog.class.getName());

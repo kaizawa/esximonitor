@@ -24,8 +24,9 @@ import javax.swing.JPanel;
 
 /**
  * Panel for buttons for virtial macnine operations
- * 
+ * @deprecated this is swing version. no longer used.
  */
+@Deprecated
 public class OperationButtonPanel extends JPanel implements ActionListener {
 
     public static final Logger logger = Logger.getLogger(OperationButtonPanel.class.getName());

@@ -58,7 +58,7 @@ public class DialogFactory
         });
     }
 
-    private static DialogViewController showDialog(
+    private static DialogViewController showDialog (
             String message, final String title, final Window parent)
     {
         try
@@ -73,10 +73,13 @@ public class DialogFactory
             Scene scene = new Scene(root);
             Stage dialog = new Stage(StageStyle.UTILITY);
             dialog.setScene(scene);
-            // Set parent window
-            dialog.initOwner(parent);
-            // Enable modal window
-            dialog.initModality(Modality.WINDOW_MODAL);
+            if (null != parent)
+            {
+                // Set parent window
+                dialog.initOwner(parent);
+                // Enable modal window
+                dialog.initModality(Modality.WINDOW_MODAL);
+            }
             dialog.setResizable(false);
             dialog.setTitle(title);
             dialog.showAndWait();

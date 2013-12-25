@@ -7,7 +7,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 
 /**
- *
+ * JavaFX controller for About Window
  */
 public class AboutViewController implements Initializable
 {

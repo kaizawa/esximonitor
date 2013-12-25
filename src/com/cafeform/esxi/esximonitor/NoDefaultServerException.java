@@ -4,10 +4,6 @@
  */
 package com.cafeform.esxi.esximonitor;
 
-/**
- *
- * @author kaizawa
- */
 public class NoDefaultServerException extends RuntimeException {
     
 }

@@ -16,9 +16,10 @@ import javax.swing.*;
 
 
 /**
- *
- * @author kaizawa
+ * 
+ * @deprecated this is SWING version. no longer used
  */
+@Deprecated
 public class EditServerDialog extends JDialog implements ActionListener, KeyListener {
     public static Logger logger = Logger.getLogger(EditServerDialog.class.getName());
     protected JTextField hostnameTextField = new JTextField(10);

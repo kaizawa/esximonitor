@@ -1,16 +1,17 @@
 package com.cafeform.esxi.esximonitor;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 /**
  * Class handle Preferences used by this app.
- * 
  */
-public class Prefs {
+public class Prefs 
+{
 
-    static Logger logger = Logger.getLogger(Prefs.class.getName());
+    static final Logger logger = Logger.getLogger(Prefs.class.getName());
     static Preferences rootPrefs;
     static Preferences serversPrefs;
 
@@ -20,7 +21,7 @@ public class Prefs {
      */
     static private Preferences getRootPreferences() {
         if (rootPrefs == null) {
-            rootPrefs = Preferences.userNodeForPackage(Main.class);
+            rootPrefs = Preferences.userNodeForPackage(EsxiMonitor.class);
         }
         return rootPrefs;
     }
@@ -40,7 +41,8 @@ public class Prefs {
      */
     static public void addServer(String hostname, String username, String password)
     {
-        logger.finer("hostname=" + hostname + ", username=" + username);
+        logger.log(Level.FINER, "hostname={0}, username={1}", 
+                new Object[]{hostname, username});
         Preferences serverPrefs = getServersPreferences().node(hostname);
         serverPrefs.put("hostname", hostname);
         serverPrefs.put("username", username);        
@@ -53,12 +55,15 @@ public class Prefs {
      */
     static public void removeServer(String hostname)
     {
-        logger.finer("hostname=" + hostname);                        
+        logger.log(Level.FINER, "hostname={0}", hostname);                        
         Preferences serverPrefs = getServersPreferences().node(hostname);
         try {
             serverPrefs.removeNode();
         } catch (BackingStoreException ex) {
-            ex.printStackTrace();
+            logger.log(Level.INFO, 
+                    "Cannot remove server from preference", ex);
+            DialogFactory.showSimpleDialog(
+                    "Cannot remove server prom preference", "Error", null);
         }
     }
     

@@ -1,27 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.cafeform.esxi.esximonitor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.net.MalformedURLException;
+import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
-import javafx.beans.InvalidationListener;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 
 /**
- *
- * @author kaizawa
+ * Manage ESXi server to be monitored.
+ * This is concrete class of ServerManager interface
  */
 public class ServerManagerImpl implements ServerManager
 {
@@ -30,29 +20,27 @@ public class ServerManagerImpl implements ServerManager
     private ObservableList<Server> serverList = null;
 
     @Override
-    public Server getDefaultServer() throws NoDefaultServerException
+    public Server getDefaultServer() 
     {
         if (null == defaultServer)
         {
             String defaultServerName = Prefs.getDefaultServerPreference();
             defaultServer = getServerByHostname(defaultServerName);
-            if (null == defaultServer)
-            {
-                throw new NoDefaultServerException();
-            }
         }
         return defaultServer;
     }
 
     /**
-     * Specify default ESXi host to be shown in main window. This method must be
-     * called from actionPerformed. (except for first load without default
-     * server setting)
+     * Specify default ESXi host to be shown in main window. 
+     * This method must be called from actionPerformed. 
+     * (except for first load without default server setting)
      *
      * @param hostname
      */
+    @Deprecated
     @Override
-    public void setDefaultServerByHostname(String hostname)
+    public void setDefaultServerByHostname(String hostname) 
+            throws MalformedURLException, RemoteException
     {
         if (null == hostname)
         {
@@ -64,7 +52,8 @@ public class ServerManagerImpl implements ServerManager
     }
 
     @Override
-    public synchronized void setDefaultServer(Server server)
+    public synchronized void setDefaultServer(Server server) 
+            throws MalformedURLException, RemoteException
     {
         if (null == server)
         {
@@ -73,22 +62,12 @@ public class ServerManagerImpl implements ServerManager
         } 
         else
         {
-            /*
-             * First connection with current server
-             */
-            try
+            // First connection with current server
+            if (null != getDefaultServer()) 
             {
                 getDefaultServer().resetServer();
-            } 
-            catch (NoDefaultServerException ex)
-            {
-                /*
-                 * could be here, if this is first access
-                 */
             }
-            /*
-             * Change default server to new server name.
-             */
+            // Change default server to new server name.
             Prefs.setDefaultServerPreference(server.getHostname());
             defaultServer = server;
         }
@@ -96,15 +75,12 @@ public class ServerManagerImpl implements ServerManager
 
     /**
      * Return List of ESXi host info stored in preferences.
-     *
      */
     @Override
     public ObservableList<Server> getServerList()
     {
-        /* 
-         * If this is first time to get server list, get list from Preferences.
-         * After that, manage list in own list.
-         */
+         // If this is first time to get server list, get list from Preferences.
+         // After that, manage list in own list.
         if (null == serverList)
         {
             serverList = FXCollections.observableArrayList();
@@ -121,8 +97,13 @@ public class ServerManagerImpl implements ServerManager
                     server.setPassword(serverPrefs.get("password", ""));
                     serverList.add(server);
                 }
-            } catch (BackingStoreException ex)
+            } 
+            catch (BackingStoreException ex)
             {
+                logger.log(Level.INFO, 
+                        "Cannot get server list from preferences", ex);
+                DialogFactory.showSimpleDialog(
+                        "Cannot get server list from preferences", "Error", null);
             }
         }
         return serverList;
@@ -142,12 +123,19 @@ public class ServerManagerImpl implements ServerManager
     }
 
     @Override
-    public synchronized void addServer(Server server)
+    public synchronized void addServer(Server server) 
+            throws MalformedURLException, RemoteException
     {
         Prefs.addServer(
                 server.getHostname(), 
                 server.getUsername(), 
                 server.getPassword());
+        if (0 == getServerList().size() || null == getDefaultServer())
+        {
+            // This is a first server or no default server is set yet.
+            // Set this server as a default server.
+            setDefaultServer(server);
+        }
         getServerList().add(server);
         logger.log(Level.FINER, "{0} is added", server.getHostname());
     }

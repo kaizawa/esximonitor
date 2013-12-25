@@ -23,7 +23,6 @@ import javafx.stage.Window;
 
 /**
  * Panel for buttons for virtial macnine operations
- *
  */
 public class OperationButtonBox extends HBox
 {

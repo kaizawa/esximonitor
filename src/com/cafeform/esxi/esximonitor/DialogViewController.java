@@ -5,7 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
 /**
- *
+ * JavaFX controller for Dialog window
  */
 public class DialogViewController {
 
