@@ -16,3 +16,5 @@ esximonitor.html
 esximonitor.jnlp
 dist/*
 test
+nbproject/jfx-impl_backup*
+nbproject/UPDATED.TXT

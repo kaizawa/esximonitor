@@ -23,17 +23,15 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
-import javax.swing.Icon;
 
 /**
  * JavaFX Controller class for Server List window
  */
 public class ServerListViewController implements Initializable
 {
-    private static final Logger logger = Logger.getLogger(ServerDialog.class.getName());
+    private static final Logger logger 
+            = Logger.getLogger(ServerListViewController.class.getName());
     private VirtualMachine vm;
-    private static Icon delete_button = null;
-    private static Icon edit_button = null;
     private ServerManager manager;
 
     @FXML

@@ -64,9 +64,8 @@ public class EditServerViewController
             } 
             catch (MalformedURLException | RemoteException ex) 
             {
-                logger.log(Level.SEVERE, "Cannot add server", ex);
-                DialogFactory.showSimpleDialog("Cannot add server", "Error", 
-                        getWindow());
+                DialogFactory.showSimpleDialogAndLog("Cannot add server", 
+                        "Error", getWindow(), logger, Level.SEVERE, ex);
             }
         } 
         else 

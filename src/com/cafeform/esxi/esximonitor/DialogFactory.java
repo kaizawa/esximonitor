@@ -1,5 +1,6 @@
 package com.cafeform.esxi.esximonitor;
 
+import static com.cafeform.esxi.esximonitor.EsxiMonitorViewController.logger;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,5 +91,22 @@ public class DialogFactory
             logger.log(Level.SEVERE, null, ex);
         }
         return null;
+    }
+    
+    static void showSimpleDialogAndLog(
+            final String message,            
+            final String title,
+            final Window parent,
+            Logger logger,                                    
+            Level level,
+            Throwable ex
+            )
+    {
+        if(null != ex) {
+            logger.log(Level.SEVERE, message, ex);
+        } else {
+            logger.log(Level.SEVERE, message);            
+        }
+        showSimpleDialog(message, title, parent);
     }
 }

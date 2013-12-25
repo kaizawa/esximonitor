@@ -36,11 +36,9 @@ public class OperationButtonBox extends HBox
     private ImageView exclamationIcon;
     private ImageView blankIcon;    
     private final Server server;
-    private final ExecutorService executor = 
-            Executors.newSingleThreadScheduledExecutor();
     EsxiMonitorViewController controller;
     private final boolean poweredOn;
-
+    
     public OperationButtonBox(
             VirtualMachine vm, 
             Server server,
@@ -61,7 +59,7 @@ public class OperationButtonBox extends HBox
                 createButton(exclamationIcon, SHUTDOWN));  
     }
 
-    private void doCommand(CommandType command) 
+    private void doCommand(CommandType command) throws InterruptedException 
     {
         try
         {
@@ -156,10 +154,7 @@ public class OperationButtonBox extends HBox
                     "Error",
                     getWindow());
         } 
-        finally
-        {
-            //controller.getProgressBar().setProgress(0f);
-        }
+
         controller.updateVmListPanel();
         logger.finer("panel update request posted");
     }
@@ -220,6 +215,9 @@ public class OperationButtonBox extends HBox
     
     private class ButtonEventHandler implements EventHandler<MouseEvent>
     {
+        final ExecutorService executor = 
+                Executors.newSingleThreadScheduledExecutor();
+
         private final CommandType command;
         public ButtonEventHandler(CommandType command)
         {
@@ -264,7 +262,7 @@ public class OperationButtonBox extends HBox
                     controller.getStatusLabel().setText("");
                 }
             });
-                    
+            executor.shutdown();                   
         }
     }
 }
