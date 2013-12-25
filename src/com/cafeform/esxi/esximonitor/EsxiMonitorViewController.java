@@ -171,12 +171,14 @@ public class EsxiMonitorViewController implements Initializable
 
     /**
      * Update Main window's virtual machine list
+     * @throws java.lang.InterruptedException
      */
     public void updateVmListPanel() throws InterruptedException
     {
         logger.finer("submitting task");
         final List<Server> serverList = manager.getServerList();
         logger.log(Level.FINER, "{0} server(s) registerd", serverList.size());
+        statusLabel.setText("Updating virtual machine list");
         progressBar.setProgress(-1.0f);
         final EsxiMonitorViewController controller = this;
         final ExecutorService executor
@@ -191,8 +193,18 @@ public class EsxiMonitorViewController implements Initializable
                 ObservableList<VirtualMachineRowEntry> foundVmEntryList
                         = FXCollections.observableArrayList();
                 logger.fine("update task is running");
-                for (Server server : serverList)
+                for (final Server server : serverList)
                 {
+                    Platform.runLater(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            statusLabel.setText("Accessing " 
+                                    + server.getHostname());                            
+                        }
+                    });
+
                     // If "All Server" mode, show all VMs of all server
                     if (!allServerMode && server
                             != manager.getDefaultServer())
