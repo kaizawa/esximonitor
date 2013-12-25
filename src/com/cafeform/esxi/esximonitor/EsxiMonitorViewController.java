@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -48,7 +47,6 @@ public class EsxiMonitorViewController implements Initializable
     final public static int iconSize = 15;
     private final ServerManager manager = new ServerManagerImpl();
     private boolean allServerMode = false;
-    private final int TIMEOUT_IN_SEC = 30;
 
     @FXML
     private TableView<VirtualMachineRowEntry> table;
@@ -83,10 +81,11 @@ public class EsxiMonitorViewController implements Initializable
             {
                 ServerListViewController.
                         createEditServerWindow(manager, null, null);
-            } catch (IOException exi)
+            } 
+            catch (IOException exi)
             {
                 DialogFactory.showSimpleDialogAndLog(
-                        "Cannot create dialog window.\n" + exi.getMessage(),
+                        "Cannot create Server edit window.",
                         "Error", getWindow(), logger, Level.SEVERE, exi);
             }
         }
@@ -117,21 +116,25 @@ public class EsxiMonitorViewController implements Initializable
                             try
                             {
                                 manager.setDefaultServer(newServer);
-                                updateVmListPanel();
                             } 
                             catch (MalformedURLException | RemoteException ex)
                             {
                                 DialogFactory.showSimpleDialogAndLog(
                                         "Cannot set default server", "Error", 
                                         getWindow(), logger,Level.SEVERE, ex);
-                            } catch (InterruptedException ex)
+                            } 
+                            try 
+                            {
+                                updateVmListPanel();                                
+                            }
+                            catch (InterruptedException ex)
                             {
                                 DialogFactory.showSimpleDialogAndLog(
                                         "Cannot udpate server list","Error", 
                                         getWindow(), logger, Level.SEVERE, ex);
                             }
                         }
-                            }
+                    }
                 });
 
         // Set listener for All Server Check Box
@@ -231,11 +234,6 @@ public class EsxiMonitorViewController implements Initializable
             }
         });
         executor.shutdown();
-        if (executor.awaitTermination(TIMEOUT_IN_SEC, TimeUnit.SECONDS))
-        {
-            logger.finer("Cannot retrieve VM infomation within "
-                    + TIMEOUT_IN_SEC + " sec.");
-        }
     }
 
     @FXML
@@ -267,7 +265,7 @@ public class EsxiMonitorViewController implements Initializable
      * @param event
      */
     @FXML
-    private void handleEditHosts(ActionEvent event)
+    private void handleEditServers(ActionEvent event)
     {
         try
         {
@@ -288,10 +286,12 @@ public class EsxiMonitorViewController implements Initializable
             serverListWindows.setResizable(false);
             serverListWindows.setTitle("ESXi Server List");
             serverListWindows.showAndWait();
-        } catch (IOException ex)
+        } 
+        catch (IOException ex)
         {
-            Logger.getLogger(
-                    EsxiMonitorViewController.class.getName()).log(Level.SEVERE, null, ex);
+            DialogFactory.showSimpleDialogAndLog(
+                    "Cannot create Server list window", "Error", getWindow(), 
+                    logger, Level.SEVERE, ex);
         }
     }
 
@@ -320,10 +320,12 @@ public class EsxiMonitorViewController implements Initializable
             serverListWindows.setResizable(false);
             serverListWindows.setTitle("About ESXiMonitor");
             serverListWindows.showAndWait();
-        } catch (IOException ex)
+        } 
+        catch (IOException ex)
         {
-            Logger.getLogger(
-                    EsxiMonitorViewController.class.getName()).log(Level.SEVERE, null, ex);
+            DialogFactory.showSimpleDialogAndLog(
+                    "Cannot create about window", "Error", getWindow(), 
+                    logger, Level.SEVERE, ex);
         }
     }
 

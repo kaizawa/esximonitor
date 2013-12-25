@@ -1,6 +1,5 @@
 package com.cafeform.esxi.esximonitor;
 
-import com.cafeform.esxi.RecieveErrorMessageException;
 import static com.cafeform.esxi.esximonitor.CommandType.*;
 import com.vmware.vim25.*;
 import com.vmware.vim25.mo.Task;
@@ -59,7 +58,9 @@ public class OperationButtonBox extends HBox
                 createButton(exclamationIcon, SHUTDOWN));  
     }
 
-    private void doCommand(CommandType command) throws InterruptedException 
+    private void doCommand(CommandType command) 
+            throws InterruptedException, InvalidState, RuntimeFault, 
+            RemoteException, IOException 
     {
         try
         {
@@ -83,76 +84,15 @@ public class OperationButtonBox extends HBox
             {
                 task.waitForTask();
             }
-        } 
-        catch (InterruptedException ex)
-        {
-            // interrupted 
-        } 
-        catch (InvalidState ex)
-        {
-            DialogFactory.showSimpleDialog(
-                    "Invalid State\n", 
-                    "Error", 
-                    this.getScene().getWindow());
-        } 
-        catch (TaskInProgress ex)
-        {
-            DialogFactory.showSimpleDialog("Task Inprogress\n"  +
-                    ex.getMessage() + "\n" + ex.getTask().getVal() + 
-                    "\n" + ex.getTask().getType(), 
-                    "Error", 
-                    getWindow());
-        } 
-        catch (ToolsUnavailable ex)
-        {
-            DialogFactory.showSimpleDialog("Cannot complete operation because" +
-                    " VMware Tools is not running in this virtual machine.", 
-                    "Error", 
-                    getWindow());
-        } 
+        }    
         catch (RestrictedVersion ex)
         {
-            try
-            {
                 /* Seems remote ESXi server doesn't accept command via VI API
                  * try to run command via SSH
                  */
                 logger.finer("Get RestrictedVersion from ESXi. " +
                         "Try command via SSH.");
                 server.runCommandViaSsh(command, vm);
-            } 
-            catch (RecieveErrorMessageException ex2)
-            {
-                DialogFactory.showSimpleDialog(
-                        ex2.getMessage(), 
-                        "Error", 
-                        getWindow());
-            } 
-            catch (IOException ex3)
-            {
-                // Ouch, command faild via SSH too... 
-                // Report the result to user.
-                logger.log(Level.SEVERE, "runCommandViaSSH recieved {0}", 
-                        ex3.toString());
-                DialogFactory.showSimpleDialog(ex3.toString(), 
-                        "Error", 
-                        getWindow());
-            }
-
-        } 
-        catch (RuntimeFault ex)
-        {
-            DialogFactory.showSimpleDialog(
-                    "RuntimeFault\n",
-                    "Error", 
-                    getWindow());
-        } 
-        catch (RemoteException ex)
-        {
-            DialogFactory.showSimpleDialog(
-                    "RemoteFault\n",
-                    "Error",
-                    getWindow());
         } 
 
         controller.updateVmListPanel();
@@ -251,7 +191,17 @@ public class OperationButtonBox extends HBox
                 @Override
                 protected Void call() throws Exception
                 {
-                    doCommand(command);
+                    try
+                    {
+                        doCommand(command);
+                    } 
+                    catch (InterruptedException | IOException  ex)
+                    {
+                        DialogFactory.showSimpleDialogAndLog(
+                                "Cannot " + command.toString() + " on " + 
+                                        vm.getName(),
+                                "Error", getWindow(), logger, Level.SEVERE, ex);
+                    } 
                     return null;
                 }
                 

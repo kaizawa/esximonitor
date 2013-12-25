@@ -104,10 +104,10 @@ public class ServerImpl implements Server
     @Override
     public void resetServer() throws MalformedURLException, RemoteException
     {
-        ServiceInstance svcInst = getServiceInstance();
-        if (null != svcInst)
+
+        if (null != serviceInstance)
         {
-            svcInst.getServerConnection().logout();
+            serviceInstance.getServerConnection().logout();
         }
         setServiceInstance(null);
         setRootFolder(null);

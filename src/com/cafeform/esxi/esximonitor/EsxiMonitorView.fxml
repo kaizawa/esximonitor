@@ -73,7 +73,7 @@
         </Menu>
         <Menu mnemonicParsing="false" text="Edit">
           <items>
-            <MenuItem mnemonicParsing="false" onAction="#handleEditHosts" text="ESXi Servers" />
+            <MenuItem mnemonicParsing="false" onAction="#handleEditServers" text="ESXi Servers" />
           </items>
         </Menu>
         <Menu mnemonicParsing="false" text="Help">

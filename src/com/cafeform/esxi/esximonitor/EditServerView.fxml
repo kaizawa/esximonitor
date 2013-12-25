@@ -13,7 +13,7 @@
   <bottom>
     <HBox alignment="CENTER_RIGHT" prefHeight="-1.0" prefWidth="-1.0" spacing="10.0">
       <children>
-        <Button id="editButtonText" fx:id="editButton" mnemonicParsing="false" onAction="#handleEdit" text="Save" />
+        <Button id="editButtonText" fx:id="editButton" mnemonicParsing="false" onAction="#handleEditButton" text="Save" />
         <Button cancelButton="true" defaultButton="true" mnemonicParsing="false" onAction="#handleCancel" text="Cancel" />
       </children>
     </HBox>

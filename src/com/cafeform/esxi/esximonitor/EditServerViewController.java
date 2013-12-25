@@ -44,7 +44,7 @@ public class EditServerViewController
     }
     
     @FXML
-    private void handleEdit (ActionEvent event) 
+    private void handleEditButton (ActionEvent event) 
     {
         if (null == manager)
         {
